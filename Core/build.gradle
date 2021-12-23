@@ -1,0 +1,29 @@
+plugins {
+    id 'java'
+}
+
+group 'eu.asylum'
+version '1.0-SNAPSHOT'
+
+tasks.generateSpigotDescription.enabled = true
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly paper("1.16.1-R0.1-SNAPSHOT")
+    implementation project(":common")
+    implementation "co.aikar:acf-paper:0.5.0-SNAPSHOT"
+}
+
+spigot {
+    authors = ['iim_rudy']
+    apiVersion = '1.15'
+    load = STARTUP
+}
+
+
+
+
+

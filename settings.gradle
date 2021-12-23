@@ -1,0 +1,4 @@
+rootProject.name = 'Asylum'
+include 'Core'
+include 'Lobby'
+include 'common'

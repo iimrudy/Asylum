@@ -1,0 +1,76 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '7.1.0'
+    id 'kr.entree.spigradle' version '2.2.4'
+}
+
+tasks.generateSpigotDescription.enabled = false
+
+group 'eu.asylum'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly project(":common")
+    compileOnly project(":Core")
+    compileOnly project(":Lobby")
+}
+
+
+subprojects {
+    apply plugin: "com.github.johnrengelman.shadow"
+    apply plugin: "kr.entree.spigradle"
+    apply plugin: 'java'
+
+    tasks.generateSpigotDescription.enabled = false
+
+    jar {
+
+    }
+    repositories {
+        maven { url = "https://repo.aikar.co/content/groups/aikar/" }
+    }
+
+    dependencies {
+        compileOnly lombok()
+        annotationProcessor lombok()
+
+        compileOnly 'org.mongodb:mongodb-driver-sync:4.4.0' // mongodb
+        compileOnly 'io.lettuce:lettuce-core:6.1.5.RELEASE' // redis client
+        compileOnly 'com.google.code.gson:gson:2.8.9' // google gson
+        compileOnly group: 'org.apache.commons', name: 'commons-lang3', version: '3.12.0' // apache common lang 3
+        compileOnly group: 'org.apache.commons', name: 'commons-text', version: '1.9' // apache common text
+        compileOnly group: 'org.apache.commons', name: 'commons-collections4', version: '4.4'
+        // apache common collections
+        compileOnly 'org.hydev:HyLogger:2.1.0.378' // logging library
+        compileOnly "co.aikar:acf-paper:0.5.0-SNAPSHOT" // command processor
+
+    }
+
+    shadowJar {
+        relocate 'com.mongodb', 'eu.asylum.libs.com.mongodb'
+        relocate 'io.lettuce', 'eu.asylum.libs.io.lettuce'
+        relocate 'org.bson', 'eu.asylum.libs.org.bson'
+        relocate 'org.slf4j', 'eu.asylum.libs.org.slf4j'
+        relocate 'org.apache', 'eu.asylum.libs.org.apache'
+        relocate 'com.google', 'eu.asylum.libs.com.google'
+        relocate 'reactor', 'eu.asylum.libs.reactor'
+        relocate 'org.reactivestreams', 'eu.asylum.libs.org.reactivestreams'
+        relocate 'io.netty', 'eu.asylum.libs.io.netty'
+        relocate 'co.aikar.commands', 'eu.asylum.libs.acf'
+        relocate 'co.aikar.locales', 'eu.asylum.libs.locales'
+        minimize()
+    }
+
+    spigot {
+        authors = ['iim_rudy']
+        apiVersion = '1.15'
+        load = STARTUP
+    }
+
+    jar.dependsOn shadowJar
+}
+
