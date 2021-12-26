@@ -7,6 +7,7 @@ import eu.asylum.common.data.AsylumPlayer;
 import eu.asylum.common.database.AsylumDB;
 import eu.asylum.common.mongoserializer.MongoSerializer;
 import eu.asylum.common.utils.Constants;
+import eu.asylum.common.utils.TaskWaiter;
 import lombok.Getter;
 import lombok.NonNull;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -19,18 +20,21 @@ import java.util.stream.Collectors;
 public abstract class AsylumProvider<T> {
 
     private final Map<T, AsylumPlayer<T>> asylumPlayerMap = new ConcurrentHashMap<>();
-    private final List<String> fetchingUUIDS = Collections.synchronizedList(new ArrayList<String>());
-    private final ConfigurationContainer configurationContainer;
+    // private final List<String> fetchingUUIDS = Collections.synchronizedList(new ArrayList<String>());
+    private final Map<String, TaskWaiter> uuidLatchMap = new ConcurrentHashMap<>();
+    @Getter
+    private final ConfigurationContainer<?> configurationContainer;
 
     @Getter
     private final AsylumDB asylumDB;
 
-    public AsylumProvider(@NonNull ConfigurationContainer configurationContainer) {
-        this.configurationContainer = configurationContainer;
-        this.asylumDB = new AsylumDB(AsylumConfiguration.REDIS_URI.getString(this.configurationContainer),
-                AsylumConfiguration.MONGODB_URI.getString(this.configurationContainer));
-        getOnlinePlayers().forEach(player -> getAsylumPlayerAsync(player));
+    private final Object _lock = new Object();
 
+    public AsylumProvider(@NonNull ConfigurationContainer<?> configurationContainer) {
+        this.configurationContainer = configurationContainer;
+        AsylumConfiguration.setConfigurationContainer(this.configurationContainer);
+        this.asylumDB = new AsylumDB(AsylumConfiguration.REDIS_URI.getString(), AsylumConfiguration.MONGODB_URI.getString());
+        getOnlinePlayers().forEach(this::getAsylumPlayerAsync);
     }
 
     /**
@@ -38,35 +42,43 @@ public abstract class AsylumProvider<T> {
      *
      * @param t return an Optional<AsylumPlayer> given the t object
      **/
-    public Optional<AsylumPlayer<T>> getAsylumPlayer(@NonNull T t) {
-        // if not contains generate asylumPlayer
-        synchronized (this.asylumPlayerMap) {
-            synchronized (this.fetchingUUIDS) {
-                if (this.fetchingUUIDS.contains(getUUID(t).toString())) { // if someone is already getting data from the database just return an empty Optional, only 1 same uuid can be retrieved by time.
-                    return Optional.empty();
-                } else {
-                    this.fetchingUUIDS.add(getUUID(t).toString());
-                    var ap = this.asylumPlayerMap.get(t);
-                    if (ap == null) {
-                        // check if a document already exist into the collection.
-                        var collection = this.asylumDB.getMongoCollection("asylum", "users");
 
-                        var d = collection.find(Filters.eq("_id", getUUID(t).toString())).first();
-                        if (d != null) {
-                            var x = MongoSerializer.deserialize(d, AsylumPlayer.class);
-                            ap = new AsylumPlayer<T>(x.getUuid(), x.getUsername(), t); // recreate with the generic.
-                            this.asylumPlayerMap.put(t, ap);
-                        } else {
-                            // create user
-                            collection.insertOne(MongoSerializer.serialize(new AsylumPlayer(this.getUUID(t), this.getUsername(t), t))); // insert into db
-                            this.fetchingUUIDS.remove(getUUID(t).toString());
-                            return this.getAsylumPlayer(t); // re-fetch player from db
-                        }
+    public Optional<AsylumPlayer<T>> getAsylumPlayer(@NonNull T t) {
+        synchronized (_lock) {
+            var ap = this.asylumPlayerMap.get(t);
+            if (ap == null) { // fetch from the database, the player is not in the cache
+
+                TaskWaiter waiter = uuidLatchMap.get(getUsername(t).toLowerCase());
+
+                if (waiter == null) {
+                    waiter = new TaskWaiter();
+                    // System.out.println("WAITER CREATED");
+
+                    uuidLatchMap.put(getUsername(t).toLowerCase(), waiter);
+
+                    var collection = this.asylumDB.getMongoCollection("asylum", "users");
+                    var d = collection.find(Filters.eq("_id", getUUID(t).toString())).first();
+
+                    if (d != null) { // check if a document already exist into the collection.
+                        var tempAP = MongoSerializer.deserialize(d, AsylumPlayer.class); // temp AsylumPlayer<Object>
+                        ap = new AsylumPlayer<>(tempAP.getUuid(), tempAP.getUsername(), t); // recreate with the generic.
+                    } else { // document not present, creating it.
+                        ap = new AsylumPlayer<>(this.getUUID(t), this.getUsername(t), t);
+                        collection.insertOne(MongoSerializer.serialize(ap)); // insert into db
                     }
-                    this.fetchingUUIDS.remove(this.getUUID(t).toString());
+
+                    this.asylumPlayerMap.put(t, ap);
+                    this.uuidLatchMap.remove(getUsername(t).toLowerCase());
+                    waiter.finish();
+                    // System.out.println("WAITER KILLED");
                     return Optional.of(ap);
                 }
+                // System.out.println("WAITER WAITING");
+                waiter.await(150000L);
+                // System.out.println("WAITER FINISHED");
+                return Optional.ofNullable(this.asylumPlayerMap.get(t));
             }
+            return Optional.of(ap);
         }
     }
 
@@ -115,7 +127,7 @@ public abstract class AsylumProvider<T> {
      * Get online AsylumPlayers
      */
     public List<Optional<AsylumPlayer<T>>> getOnlineAsylumPlayers() {
-        return this.getOnlinePlayers().stream().map(this::getAsylumPlayer).filter(Optional::isPresent).collect(Collectors.toUnmodifiableList());
+        return this.getOnlinePlayers().stream().map(this::getAsylumPlayer).filter(Optional::isPresent).toList();
     }
 
     /**
@@ -142,14 +154,14 @@ public abstract class AsylumProvider<T> {
         long time = System.currentTimeMillis();
         this.getAsylumPlayerAsync(t).thenAccept(optionalAsylumPlayer -> {
             long end = System.currentTimeMillis();
-            System.out.println("Time to fetch player: " + (end - time) + optionalAsylumPlayer.get().toString());
+            System.out.println("Time to fetch player: " + (end - time) + optionalAsylumPlayer.get());
         });
     }
 
     public void onQuit(@NonNull T t) {
         // save the data and quit
-        this.getAsylumPlayer(t).ifPresent(asylumPlayer -> saveAsylumPlayerAsync(asylumPlayer)/*.thenAccept(vvoid -> System.out.println("Saved player " + asylumPlayer.getUsername()))*/);
-        synchronized (this.asylumPlayerMap) {
+        this.getAsylumPlayer(t).ifPresent(this::saveAsylumPlayerAsync);
+        synchronized (_lock) {
             this.asylumPlayerMap.remove(t);
         }
     }
@@ -170,7 +182,9 @@ public abstract class AsylumProvider<T> {
 
 
     public int getSize() {
-        return this.asylumPlayerMap.size();
+        synchronized (_lock) {
+            return this.asylumPlayerMap.size();
+        }
     }
 
 

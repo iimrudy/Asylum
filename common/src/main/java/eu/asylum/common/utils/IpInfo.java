@@ -34,7 +34,7 @@ public class IpInfo {
 
     @Getter
     @EqualsAndHashCode
-    public final class GeoIpResponse {
+    public static final class GeoIpResponse {
 
         @SerializedName("ip")
         private String ip;

@@ -21,9 +21,7 @@ public class MessageUtils {
         message = ChatColor.translateAlternateColorCodes('&', message); // fix colors
         if (type == AlignmentType.CENTERED) {
             message = centerMessage(message);
-        } else if (type == AlignmentType.NORMAL) {
-            //
-        }
+        } /*else if (type == AlignmentType.NORMAL) {}*/
         // send message
         for (Player p : players) {
             p.sendMessage(message);
@@ -41,9 +39,7 @@ public class MessageUtils {
         message = ChatColor.translateAlternateColorCodes('&', message); // fix colors
         if (type == AlignmentType.CENTERED) {
             message = centerMessage(message);
-        } else if (type == AlignmentType.NORMAL) {
-            //
-        }
+        } /*else if (type == AlignmentType.NORMAL) { }*/
         // send message
         for (Player p : players) {
             p.sendMessage(message);
@@ -113,21 +109,19 @@ public class MessageUtils {
      * @param players    player list
      **/
     public static void sendActionbarPercentage(char character, String prefix, String suffix, @NonNull ChatColor c1, @NonNull ChatColor c2, int percentage, @NonNull Player... players) {
-        String message = "";
-        for (int i = 0; i < 10; i++) {
-            message += character;
-        }
+        StringBuilder message = new StringBuilder();
+        message.append(String.valueOf(character).repeat(10));
         // 100 : messageLenght = percentage : x
         int amount = (message.length() * percentage) / 100;
-        message = c1 + message.substring(0, amount) + c2 + message.substring(amount);
+        message = new StringBuilder(c1 + message.substring(0, amount) + c2 + message.substring(amount));
 
         if (prefix != null) {
-            message = prefix + message;
+            message.insert(0, prefix);
         }
         if (suffix != null) {
-            message += suffix;
+            message.append(suffix);
         }
-        sendActionbar(message, players);
+        sendActionbar(message.toString(), players);
     }
 
     /**
@@ -146,7 +140,7 @@ public class MessageUtils {
 
     public static String centerMessage(@NonNull String message) {
 
-        if (message == null || message.equals("")) return "";
+        if (message.isEmpty()) return message;
         message = ChatColor.translateAlternateColorCodes('&', message);
 
         int messagePxSize = 0;
@@ -156,13 +150,9 @@ public class MessageUtils {
         for (char c : message.toCharArray()) {
             if (c == '\u00A7') {
                 previousCode = true;
-                continue;
-            } else if (previousCode == true) {
+            } else if (previousCode) {
                 previousCode = false;
-                if (c == 'l' || c == 'L') {
-                    isBold = true;
-                    continue;
-                } else isBold = false;
+                isBold = c == 'l' || c == 'L';
             } else {
                 DefaultFontInfo dFI = DefaultFontInfo.getDefaultFontInfo(c);
                 messagePxSize += isBold ? dFI.getBoldLength() : dFI.getLength();

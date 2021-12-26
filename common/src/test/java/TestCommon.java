@@ -1,4 +1,5 @@
 import eu.asylum.common.utils.IpInfo;
+import eu.asylum.common.utils.NekobinUploader;
 import eu.asylum.common.utils.UuidConverter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -86,32 +87,17 @@ public class TestCommon {
 
         Assertions.assertDoesNotThrow(() -> {
             var response = IpInfo.fetchIp(current).get();
-            Assertions.assertTrue(response.getIp().equals(ip));
+            Assertions.assertEquals(response.getIp(), ip);
         });
+    }
+
+    @Test
+    public void testNekoBin() throws Exception {
+        System.out.println(NekobinUploader.upload("SOME TEXT TO UPLOAD LOLOLOLOLO").get());
     }
 
     private static class FakePlayer extends UuidConverter.MinecraftProfile {
 
     }
 
-    /*private static class APlayer {
-        @MongoSerialized
-        private String username;
-        @MongoSerialized
-        private Rank rank;
-        @MongoSerialized
-        private UUID uuid;
-        @MongoSerialized
-        private UuidConverter.MinecraftProfile fakePlayer;
-
-        @Override
-        public String toString() {
-            return new StringJoiner(", ", APlayer.class.getSimpleName() + "[", "]")
-                    .add("username='" + username + "'")
-                    .add("rank=" + rank)
-                    .add("uuid=" + uuid)
-                    .add("fakePlayer=" + fakePlayer)
-                    .toString();
-        }
-    }*/
 }

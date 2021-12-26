@@ -1,9 +1,10 @@
 package eu.asylum.lobby;
 
-import co.aikar.commands.PaperCommandManager;
+import co.aikar.commands.BukkitCommandManager;
 import eu.asylum.core.configuration.YamlConfigurationContainer;
 import eu.asylum.core.helpers.AsylumScoreBoard;
 import eu.asylum.lobby.commands.staff.LobbyManagerCommand;
+import eu.asylum.lobby.configuration.LobbyConfiguration;
 import kr.entree.spigradle.annotations.SpigotPlugin;
 import lombok.Getter;
 import me.clip.placeholderapi.PlaceholderAPI;
@@ -13,7 +14,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @SpigotPlugin
@@ -28,15 +30,23 @@ public class AsylumLobby extends JavaPlugin {
     @Getter
     private static AsylumLobby instance;
     private int animationTick = 0;
-
+    private BukkitCommandManager commandManager;
+    private YamlConfigurationContainer configuration;
+    private List<String> scoreboardList = new ArrayList<>();
+    private String scoreboardTitle;
     private final Runnable scoreboardTask = () -> {
         Bukkit.getOnlinePlayers().forEach(player -> {
             AsylumScoreBoard board = AsylumScoreBoard.getByPlayer(player);
 
             if (board == null) return;
 
-            board.setTitle(PlaceholderAPI.setPlaceholders(player, animations[animationTick]));
-            board.setSlotsFromList(Arrays.asList("", "line2", "line3", "", "Online player: &e&l" + Bukkit.getOnlinePlayers().size()));
+            if (!this.scoreboardTitle.isEmpty()) {
+                board.setTitle(this.scoreboardTitle);
+            } else {
+                board.setTitle(PlaceholderAPI.setPlaceholders(player, animations[animationTick]));
+            }
+
+            board.setSlotsFromList(this.scoreboardList);
         });
 
         animationTick++;
@@ -44,16 +54,14 @@ public class AsylumLobby extends JavaPlugin {
         if (animationTick >= animations.length)
             animationTick = 0;
     };
-    private PaperCommandManager commandManager;
-    private YamlConfigurationContainer configuration;
 
     @Override
     public void onEnable() {
         instance = this;
         this.getServer().getScheduler().runTaskTimerAsynchronously(this, scoreboardTask, 10L, 60L);
-        this.commandManager = new PaperCommandManager(this);
+        this.commandManager = new BukkitCommandManager(this);
         this.commandManager.registerCommand(new LobbyManagerCommand());
-        File path = new File(getDataFolder(), "AsylumCommon.yml");
+        File path = new File(getDataFolder(), "AsylumLobby.yml");
 
         try {
             if (!path.exists()) {
@@ -66,6 +74,23 @@ public class AsylumLobby extends JavaPlugin {
         } catch (Exception e) {
             throw new RuntimeException(e); // re throw exception so the plugin will be disabled
         }
+
+        this.setupScoreboardData();
+
+        for (var x : LobbyConfiguration.SCOREBOARD.get(List.class)) {
+            Bukkit.getLogger().warning(x.toString());
+        }
+    }
+
+    public void reload() throws Exception {
+        this.configuration.reload(false);
+        this.setupScoreboardData();
+    }
+
+    private void setupScoreboardData() {
+        List<String> s = LobbyConfiguration.SCOREBOARD.get(List.class);
+        this.scoreboardTitle = s.get(0);
+        this.scoreboardList = s.subList(1, s.size());
     }
 
 

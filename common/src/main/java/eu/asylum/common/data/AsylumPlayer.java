@@ -19,7 +19,7 @@ public class AsylumPlayer<T> {
     @SerializedName(value = "_id")
     private UUID uuid;
     @SerializedName(value = "firstLogin")
-    private long firstLogin = 0;
+    private long firstLogin;
 
     @SerializedName(value = "rank")
     private Rank rank = Rank.DEFAULT;

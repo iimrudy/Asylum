@@ -3,33 +3,35 @@ package eu.asylum.common.configuration;
 // simple enum creation :)
 public interface IConfigurationEnum {
 
-    public default int getInt(ConfigurationContainer cc) {
-        return cc.getInteger(this.getKey(), (int) getDefaultValue());
+    default int getInt() {
+        return getConfig().getInteger(this.getKey(), (int) getDefaultValue());
     }
 
-    public default double getDouble(ConfigurationContainer cc) {
-        return cc.getDouble(this.getKey(), (double) getDefaultValue());
+    default double getDouble() {
+        return getConfig().getDouble(this.getKey(), (double) getDefaultValue());
     }
 
-    public default boolean getBoolean(ConfigurationContainer cc) {
-        return cc.getBoolean(this.getKey(), (boolean) getDefaultValue());
+    default boolean getBoolean() {
+        return getConfig().getBoolean(this.getKey(), (boolean) getDefaultValue());
     }
 
-    public default String getString(ConfigurationContainer cc) {
-        return cc.getString(this.getKey(), (String) getDefaultValue());
+    default String getString() {
+        return getConfig().getString(this.getKey(), (String) getDefaultValue());
     }
 
-    public default <T> T get(ConfigurationContainer cc, Class<T> c) {
-        return (T) cc.get(this.getKey(), c, getDefaultValue());
+    default <T> T get(Class<T> c) {
+        return c.cast(getConfig().get(this.getKey(), c, c.cast(getDefaultValue())));
     }
 
-    public default void set(ConfigurationContainer cc, Object value) {
-        cc.setKey(this.getKey(), value);
+    default void set(Object value) {
+        getConfig().setKey(this.getKey(), value);
     }
 
-    public String getKey();
+    String getKey();
 
-    public Object getDefaultValue();
+    Object getDefaultValue();
+
+    ConfigurationContainer<?> getConfig();
 
 
 }

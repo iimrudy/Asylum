@@ -1,6 +1,6 @@
 package eu.asylum.core;
 
-import co.aikar.commands.PaperCommandManager;
+import co.aikar.commands.BukkitCommandManager;
 import eu.asylum.common.AsylumProvider;
 import eu.asylum.core.configuration.YamlConfigurationContainer;
 import eu.asylum.core.helpers.AsylumScoreBoard;
@@ -22,7 +22,9 @@ public class AsylumCore extends JavaPlugin {
     @Getter
     private static AsylumCore instance;
     private AsylumProvider<Player> asylumProvider;
-    private PaperCommandManager commandManager;
+    private BukkitCommandManager commandManager;
+    @Getter
+    private YamlConfigurationContainer configuration;
 
     @Override
     public void onEnable() {
@@ -36,8 +38,8 @@ public class AsylumCore extends JavaPlugin {
             }
             YamlConfiguration configuration = new YamlConfiguration();
             configuration.load(path);
-            YamlConfigurationContainer container = new YamlConfigurationContainer(configuration, path);
-            asylumProvider = new BukkitAsylumProvider(container);
+            this.configuration = new YamlConfigurationContainer(configuration, path);
+            asylumProvider = new BukkitAsylumProvider(this.configuration);
         } catch (Exception e) {
             throw new RuntimeException(e); // re throw exception so the plugin will be disabled
         }
@@ -46,7 +48,7 @@ public class AsylumCore extends JavaPlugin {
 
         this.getServer().getPluginManager().registerEvents(new PlayerListener(), this);
         this.getServer().getPluginManager().registerEvents((Listener) asylumProvider, this);
-        this.commandManager = new PaperCommandManager(this);
+        this.commandManager = new BukkitCommandManager(this);
         //this.commandManager.registerCommand(new LobbyManagerCommand());
     }
 

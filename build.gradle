@@ -32,11 +32,12 @@ subprojects {
     }
     repositories {
         maven { url = "https://repo.aikar.co/content/groups/aikar/" }
+        maven { url = uri("https://papermc.io/repo/repository/maven-public/") }
     }
 
     dependencies {
-        compileOnly lombok()
-        annotationProcessor lombok()
+        compileOnly 'org.projectlombok:lombok:1.18.22'
+        annotationProcessor 'org.projectlombok:lombok:1.18.22'
 
         compileOnly 'org.mongodb:mongodb-driver-sync:4.4.0' // mongodb
         compileOnly 'io.lettuce:lettuce-core:6.1.5.RELEASE' // redis client
@@ -47,7 +48,6 @@ subprojects {
         // apache common collections
         compileOnly 'org.hydev:HyLogger:2.1.0.378' // logging library
         compileOnly "co.aikar:acf-paper:0.5.0-SNAPSHOT" // command processor
-
     }
 
     shadowJar {
@@ -62,7 +62,7 @@ subprojects {
         relocate 'io.netty', 'eu.asylum.libs.io.netty'
         relocate 'co.aikar.commands', 'eu.asylum.libs.acf'
         relocate 'co.aikar.locales', 'eu.asylum.libs.locales'
-        minimize()
+        //minimize()
     }
 
     spigot {

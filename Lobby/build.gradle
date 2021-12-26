@@ -16,9 +16,10 @@ dependencies {
     compileOnly project(":Core")
     compileOnly project(":common")
     compileOnly("me.clip:placeholderapi:2.10.10")
-    compileOnly paper("1.16.1-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.17.1-R0.1-SNAPSHOT")
 }
 
 spigot {
     depends = ['Core', 'PlaceholderAPI']
+    load = "POST_WORLD"
 }

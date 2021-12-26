@@ -9,7 +9,7 @@ public abstract class AsylumCache<K, V> {
 
     private final long timeToLive; // Cache KeyValue
 
-    private final Map<K, V> cache = new ConcurrentHashMap<K, V>();
+    private final Map<K, V> cache = new ConcurrentHashMap<>();
 
     public AsylumCache(long timeToLive) {
         this.timeToLive = timeToLive;
