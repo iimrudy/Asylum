@@ -4,6 +4,7 @@ import com.mongodb.client.model.Filters;
 import eu.asylum.common.configuration.AsylumConfiguration;
 import eu.asylum.common.configuration.ConfigurationContainer;
 import eu.asylum.common.data.AsylumPlayer;
+import eu.asylum.common.data.Rank;
 import eu.asylum.common.database.AsylumDB;
 import eu.asylum.common.mongoserializer.MongoSerializer;
 import eu.asylum.common.utils.Constants;
@@ -15,7 +16,6 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 public abstract class AsylumProvider<T> {
 
@@ -61,9 +61,10 @@ public abstract class AsylumProvider<T> {
 
                     if (d != null) { // check if a document already exist into the collection.
                         var tempAP = MongoSerializer.deserialize(d, AsylumPlayer.class); // temp AsylumPlayer<Object>
-                        ap = new AsylumPlayer<>(tempAP.getUuid(), tempAP.getUsername(), t); // recreate with the generic.
+                        ap = new AsylumPlayer<>(tempAP, t); // recreate with the generic.);
                     } else { // document not present, creating it.
                         ap = new AsylumPlayer<>(this.getUUID(t), this.getUsername(t), t);
+                        ap.setRank(Rank.DEFAULT);
                         collection.insertOne(MongoSerializer.serialize(ap)); // insert into db
                     }
 
@@ -74,7 +75,7 @@ public abstract class AsylumProvider<T> {
                     return Optional.of(ap);
                 }
                 // System.out.println("WAITER WAITING");
-                waiter.await(150000L);
+                waiter.await(700L); // wait max 700ms
                 // System.out.println("WAITER FINISHED");
                 return Optional.ofNullable(this.asylumPlayerMap.get(t));
             }
