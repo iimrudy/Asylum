@@ -41,7 +41,7 @@ public class LobbyManagerCommand extends BaseCommand {
         player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lArcade &8" + MessageUtils.HEAVY_VERTICAL + " &7Reloading configuration..."));
         try {
             AsylumLobby.getInstance().reload();
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lArcade " + MessageUtils.HEAVY_VERTICAL + " &7Configuration reloaded &a&nsuccessfully&8."));
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lArcade &8" + MessageUtils.HEAVY_VERTICAL + " &7Configuration reloaded &a&nsuccessfully&8."));
         } catch (Exception e) {
             e.printStackTrace();
             player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lArcade &8" + MessageUtils.HEAVY_VERTICAL + " &7Something went wrong wile reloading the configuration. (Watch console for errors)"));

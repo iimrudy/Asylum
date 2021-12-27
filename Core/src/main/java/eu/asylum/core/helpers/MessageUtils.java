@@ -8,9 +8,9 @@ import java.util.Collection;
 
 public class MessageUtils {
 
-    private final static int CENTER_PX = 154;
     public static final char BAR_CHAR = '\u2588'; // full block character
     public static final char HEAVY_VERTICAL = '\u2503'; // box drawings heavy vertical character
+    private final static int CENTER_PX = 154;
 
     /**
      * send chat Message to a player

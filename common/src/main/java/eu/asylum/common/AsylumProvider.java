@@ -68,7 +68,10 @@ public abstract class AsylumProvider<T> {
                         collection.insertOne(MongoSerializer.serialize(ap)); // insert into db
                     }
 
-                    this.asylumPlayerMap.put(t, ap);
+
+                    if (isOnline(t)) { // fix zombie object caused by player that join and leave fast
+                        this.asylumPlayerMap.put(t, ap);
+                    }
                     this.uuidLatchMap.remove(getUsername(t).toLowerCase());
                     waiter.finish();
                     // System.out.println("WAITER KILLED");

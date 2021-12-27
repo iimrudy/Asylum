@@ -17,6 +17,7 @@ dependencies {
     compileOnly project(":common")
     compileOnly project(":Core")
     compileOnly project(":Lobby")
+    compileOnly project(":Cloud")
 }
 
 

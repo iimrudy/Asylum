@@ -94,7 +94,9 @@ public class AsylumScoreBoard {
     }
 
     public void setSlotsFromListRows(List<ScoreboardRow> rows) {
-        rows = rows.subList(0, 15);
+        if (rows.size() > 15) {
+            rows = rows.subList(0, 15);
+        }
 
         int slot = rows.size();
 
@@ -172,7 +174,7 @@ public class AsylumScoreBoard {
             StringBuffer sb = new StringBuffer();
 
             if (activeColor != null)
-                sb.append(activeColor.toString());
+                sb.append(activeColor);
             formats.forEach(format -> sb.append(format.toString()));
 
             return sb.toString();

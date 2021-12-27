@@ -5,6 +5,7 @@ import eu.asylum.core.configuration.YamlConfigurationContainer;
 import eu.asylum.core.helpers.AsylumScoreBoard;
 import eu.asylum.lobby.commands.staff.LobbyManagerCommand;
 import eu.asylum.lobby.configuration.LobbyConfiguration;
+import eu.asylum.lobby.games.GamesManager;
 import eu.asylum.lobby.listener.PlayerListener;
 import kr.entree.spigradle.annotations.SpigotPlugin;
 import lombok.Getter;
@@ -43,12 +44,15 @@ public class AsylumLobby extends JavaPlugin {
             if (board == null) return;
 
             if (!this.scoreboardTitle.isEmpty()) {
-                board.setTitle(this.scoreboardTitle);
+                board.setTitle(PlaceholderAPI.setPlaceholders(player, this.scoreboardTitle));
             } else {
                 board.setTitle(PlaceholderAPI.setPlaceholders(player, animations[animationTick]));
             }
-
-            board.setSlotsFromList(this.scoreboardList);
+            List<String> placeholdered = new ArrayList<>();
+            for (var s : scoreboardList) {
+                placeholdered.add(PlaceholderAPI.setPlaceholders(player, s));
+            }
+            board.setSlotsFromList(placeholdered);
         });
 
         animationTick++;
@@ -58,6 +62,8 @@ public class AsylumLobby extends JavaPlugin {
     };
     @Getter
     private Location lobbyLocation;
+    @Getter
+    private GamesManager gamesManager;
 
     @Override
     public void onEnable() {
@@ -80,8 +86,9 @@ public class AsylumLobby extends JavaPlugin {
         }
 
         this.loadData();
-
         this.getServer().getPluginManager().registerEvents(new PlayerListener(), this);
+        this.gamesManager = new GamesManager();
+        this.getServer().getOnlinePlayers().forEach(Items::formatInventory);
     }
 
     public void reload() throws Exception {
