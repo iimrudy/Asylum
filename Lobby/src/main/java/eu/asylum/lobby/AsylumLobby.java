@@ -5,10 +5,12 @@ import eu.asylum.core.configuration.YamlConfigurationContainer;
 import eu.asylum.core.helpers.AsylumScoreBoard;
 import eu.asylum.lobby.commands.staff.LobbyManagerCommand;
 import eu.asylum.lobby.configuration.LobbyConfiguration;
+import eu.asylum.lobby.listener.PlayerListener;
 import kr.entree.spigradle.annotations.SpigotPlugin;
 import lombok.Getter;
 import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -34,6 +36,8 @@ public class AsylumLobby extends JavaPlugin {
     private YamlConfigurationContainer configuration;
     private List<String> scoreboardList = new ArrayList<>();
     private String scoreboardTitle;
+    @Getter
+    private Location lobbyLocation;
     private final Runnable scoreboardTask = () -> {
         Bukkit.getOnlinePlayers().forEach(player -> {
             AsylumScoreBoard board = AsylumScoreBoard.getByPlayer(player);
@@ -75,22 +79,21 @@ public class AsylumLobby extends JavaPlugin {
             throw new RuntimeException(e); // re throw exception so the plugin will be disabled
         }
 
-        this.setupScoreboardData();
+        this.loadData();
 
-        for (var x : LobbyConfiguration.SCOREBOARD.get(List.class)) {
-            Bukkit.getLogger().warning(x.toString());
-        }
+        this.getServer().getPluginManager().registerEvents(new PlayerListener(), this);
     }
 
     public void reload() throws Exception {
         this.configuration.reload(false);
-        this.setupScoreboardData();
+        this.loadData();
     }
 
-    private void setupScoreboardData() {
+    private void loadData() {
         List<String> s = LobbyConfiguration.SCOREBOARD.get(List.class);
         this.scoreboardTitle = s.get(0);
         this.scoreboardList = s.subList(1, s.size());
+        this.lobbyLocation = LobbyConfiguration.HUB_SPAWN.get(Location.class);
     }
 
 
@@ -104,4 +107,8 @@ public class AsylumLobby extends JavaPlugin {
         }
     }
 
+    public void setLobbyLocation(Location lobbyLocation) {
+        LobbyConfiguration.HUB_SPAWN.set(lobbyLocation);
+        this.lobbyLocation = lobbyLocation;
+    }
 }

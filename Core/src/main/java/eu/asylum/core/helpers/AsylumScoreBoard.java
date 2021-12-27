@@ -8,10 +8,7 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class AsylumScoreBoard {
 
@@ -54,12 +51,8 @@ public class AsylumScoreBoard {
         return cached;
     }
 
-    public static AsylumScoreBoard removeScore(Player player) {
-        AsylumScoreBoard cached;
-        synchronized (AsylumScoreBoard.players) {
-            cached = players.remove(player.getUniqueId());
-        }
-        return cached;
+    public static void removeScore(Player player) {
+        players.remove(player.getUniqueId());
     }
 
     public static void flush() {
@@ -72,16 +65,17 @@ public class AsylumScoreBoard {
     }
 
     public void setSlot(int slot, String text) {
+        this.setSlot(slot, new ScoreboardRow(text));
+    }
+
+    public void setSlot(int slot, ScoreboardRow row) {
         Team team = scoreboard.getTeam("SLOT_" + slot);
         String entry = genEntry(slot);
         if (!scoreboard.getEntries().contains(entry)) {
             sidebar.getScore(entry).setScore(slot);
         }
-        text = ChatColor.translateAlternateColorCodes('&', text);
-        String pre = getFirstSplit(text);
-        String suf = getFirstSplit(ChatColor.getLastColors(pre) + getSecondSplit(text));
-        team.setPrefix(pre);
-        team.setSuffix(suf);
+        team.setPrefix(row.getPrefix());
+        team.setSuffix(row.getSuffix());
     }
 
     public void removeSlot(int slot) {
@@ -92,11 +86,17 @@ public class AsylumScoreBoard {
     }
 
     public void setSlotsFromList(List<String> list) {
-        while (list.size() > 15) {
-            list.remove(list.size() - 1);
+        ArrayList<ScoreboardRow> rows = new ArrayList<>();
+        for (int i = 0; i < list.size() && i < 15; i++) {
+            rows.add(new ScoreboardRow(list.get(i)));
         }
+        this.setSlotsFromListRows(rows);
+    }
 
-        int slot = list.size();
+    public void setSlotsFromListRows(List<ScoreboardRow> rows) {
+        rows = rows.subList(0, 15);
+
+        int slot = rows.size();
 
         if (slot < 15) {
             for (int i = (slot + 1); i <= 15; i++) {
@@ -104,8 +104,8 @@ public class AsylumScoreBoard {
             }
         }
 
-        for (String line : list) {
-            setSlot(slot, line);
+        for (ScoreboardRow row : rows) {
+            setSlot(slot, row);
             slot--;
         }
     }
@@ -114,15 +114,82 @@ public class AsylumScoreBoard {
         return ChatColor.values()[slot].toString();
     }
 
-    private String getFirstSplit(String s) {
-        return s.length() > 16 ? s.substring(0, 16) : s;
-    }
+    /**
+     * @author serega6531
+     * @lastEditor iim_rudy
+     * @link https://gist.github.com/serega6531/4acd23ac188c8c568287
+     **/
+    private class ScoreboardRow {
 
-    private String getSecondSplit(String s) {
-        if (s.length() > 32) {
-            s = s.substring(0, 32);
+        private String prefix, suffix;
+
+        public ScoreboardRow(String row) {
+            row = ChatColor.translateAlternateColorCodes('&', row);
+            if (row.length() <= 16) {
+                prefix = row;
+                suffix = "";
+            } else {     //up to 16+16, color pair is in single part
+                int cut = findCutPoint(row);
+                prefix = row.substring(0, cut);
+                suffix = continueColors(prefix) + row.substring(cut, row.length());
+
+                if (suffix.length() > 16) {
+                    suffix = suffix.substring(0, 16);
+                }
+            }
         }
-        return s.length() > 16 ? s.substring(16) : "";
+
+        private int findCutPoint(String s) {
+            for (int i = 16; i > 0; i--) {
+                if (s.charAt(i - 1) == ChatColor.COLOR_CHAR && ChatColor.getByChar(s.charAt(i)) != null)
+                    continue;
+                return i;
+            }
+            return 16;
+        }
+
+        private String continueColors(String prefix) {
+            ChatColor activeColor = null;
+            Set<ChatColor> formats = new HashSet<>();
+
+            for (int i = 0; i < prefix.length() - 1; i++) {
+                char c1 = prefix.charAt(i);
+                char c2 = prefix.charAt(i + 1);
+
+                ChatColor color = ChatColor.getByChar(c2);
+                if (c1 == ChatColor.COLOR_CHAR && color != null) {
+                    if (color == ChatColor.RESET) {
+                        activeColor = null;
+                        formats.clear();
+                    } else if (color.isColor()) {
+                        activeColor = color;
+                    } else {
+                        formats.add(color);
+                    }
+                }
+            }
+
+            StringBuffer sb = new StringBuffer();
+
+            if (activeColor != null)
+                sb.append(activeColor.toString());
+            formats.forEach(format -> sb.append(format.toString()));
+
+            return sb.toString();
+        }
+
+        public String getPrefix() {
+            return prefix;
+        }
+
+        public String getSuffix() {
+            return suffix;
+        }
+
+        @Override
+        public String toString() {
+            return prefix + suffix;
+        }
     }
 
 }

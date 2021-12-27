@@ -39,19 +39,19 @@ public class NekobinUploader {
     @ToString
     public static final class NekobinDocument {
         @SerializedName("key")
-        private final String key = "";
+        private String key;
         @SerializedName("title")
-        private final String title = "";
+        private String title;
         @SerializedName("author")
-        private final String author = "";
+        private String author;
         @SerializedName("date")
-        private final String date = "";
+        private String date;
         @SerializedName("views")
-        private final int views = -1;
+        private int views;
         @SerializedName("length")
-        private final int length = -1;
+        private int length;
         @SerializedName("content")
-        private final String content = "";
+        private String content;
 
         public String asUrl() {
             return "https://nekobin.com/" + this.key;
