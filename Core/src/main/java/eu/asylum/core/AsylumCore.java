@@ -25,7 +25,7 @@ public class AsylumCore extends JavaPlugin {
 
     @Getter
     private static AsylumCore instance;
-    private static RedisAsylumServerUpdate redisAsylumServerUpdate = new RedisAsylumServerUpdate();
+    private static final RedisAsylumServerUpdate redisAsylumServerUpdate = new RedisAsylumServerUpdate();
     private AsylumProvider<Player> asylumProvider;
     private BukkitCommandManager commandManager;
     @Getter
