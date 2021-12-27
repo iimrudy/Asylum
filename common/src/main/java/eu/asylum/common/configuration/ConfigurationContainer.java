@@ -16,23 +16,23 @@ public abstract class ConfigurationContainer<T> {
 
     public abstract int getInteger(String key);
 
-    public abstract String getString(String key);
-
-    public abstract boolean getBoolean(String key);
-
-    public abstract double getDouble(String key);
-
-    public abstract <T> T get(String key, Class<T> clazz);
-
     public abstract int getInteger(String key, int defaultValue);
+
+    public abstract String getString(String key);
 
     public abstract String getString(String key, String defaultValue);
 
+    public abstract boolean getBoolean(String key);
+
     public abstract boolean getBoolean(String key, boolean defaultValue);
+
+    public abstract double getDouble(String key);
 
     public abstract double getDouble(String key, double defaultValue);
 
     public abstract <T> T get(String key, Class<T> clazz, T defaultValue);
+
+    public abstract <T> T get(String key, Class<T> clazz);
 
     public abstract void setKey(String key, Object value);
 

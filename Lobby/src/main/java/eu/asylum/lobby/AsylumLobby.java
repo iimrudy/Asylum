@@ -36,8 +36,6 @@ public class AsylumLobby extends JavaPlugin {
     private YamlConfigurationContainer configuration;
     private List<String> scoreboardList = new ArrayList<>();
     private String scoreboardTitle;
-    @Getter
-    private Location lobbyLocation;
     private final Runnable scoreboardTask = () -> {
         Bukkit.getOnlinePlayers().forEach(player -> {
             AsylumScoreBoard board = AsylumScoreBoard.getByPlayer(player);
@@ -58,6 +56,8 @@ public class AsylumLobby extends JavaPlugin {
         if (animationTick >= animations.length)
             animationTick = 0;
     };
+    @Getter
+    private Location lobbyLocation;
 
     @Override
     public void onEnable() {

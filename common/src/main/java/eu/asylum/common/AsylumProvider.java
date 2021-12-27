@@ -150,6 +150,11 @@ public abstract class AsylumProvider<T> {
         return optionalT.isPresent() && this.isOnline(optionalT.get()); // if The optional is empty the player is not online
     }
 
+    /**
+     * Get if player is online
+     */
+    public abstract boolean isOnline(@NonNull T t);
+
     public void onJoin(@NonNull T t) {
         // setup player data
         long time = System.currentTimeMillis();
@@ -171,16 +176,6 @@ public abstract class AsylumProvider<T> {
         this.asylumDB.shutdown();
         Constants.get().shutdown();
     }
-
-    // close database connections properly on finalize
-    protected final void finalize() throws Throwable {
-        try {
-            this.shutdown();
-        } finally { // safe finalize, even if shutdown throws an exception
-            super.finalize();
-        }
-    }
-
 
     public int getSize() {
         synchronized (_lock) {
@@ -205,11 +200,6 @@ public abstract class AsylumProvider<T> {
      * Get username from player
      */
     public abstract String getUsername(@NonNull T t);
-
-    /**
-     * Get if player is online
-     */
-    public abstract boolean isOnline(@NonNull T t);
 
     /**
      * Send message to a player, message should be already color formatted

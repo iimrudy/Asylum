@@ -23,28 +23,13 @@ public class YamlConfigurationContainer extends ConfigurationContainer<YamlConfi
     }
 
     @Override
-    public String getString(String key) {
-        return this.configuration.getString(key);
-    }
-
-    @Override
-    public boolean getBoolean(String key) {
-        return this.configuration.getBoolean(key);
-    }
-
-    @Override
-    public double getDouble(String key) {
-        return this.configuration.getDouble(key);
-    }
-
-    @Override
-    public <T> T get(String key, Class<T> clazz) {
-        return this.configuration.getObject(key, clazz);
-    }
-
-    @Override
     public int getInteger(String key, int defaultValue) {
         return this.configuration.getInt(key, defaultValue);
+    }
+
+    @Override
+    public String getString(String key) {
+        return this.configuration.getString(key);
     }
 
     @Override
@@ -53,13 +38,28 @@ public class YamlConfigurationContainer extends ConfigurationContainer<YamlConfi
     }
 
     @Override
+    public boolean getBoolean(String key) {
+        return this.configuration.getBoolean(key);
+    }
+
+    @Override
     public boolean getBoolean(String key, boolean defaultValue) {
         return this.configuration.getBoolean(key, defaultValue);
     }
 
     @Override
+    public double getDouble(String key) {
+        return this.configuration.getDouble(key);
+    }
+
+    @Override
     public double getDouble(String key, double defaultValue) {
         return this.configuration.getDouble(key, defaultValue);
+    }
+
+    @Override
+    public <T> T get(String key, Class<T> clazz) {
+        return this.configuration.getObject(key, clazz);
     }
 
     @Override

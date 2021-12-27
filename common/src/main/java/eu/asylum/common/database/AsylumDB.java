@@ -147,13 +147,5 @@ public class AsylumDB {
         this.pubSubConnectionSender.close();
         this.redisClient.shutdown();
     }
-
-    // close database connections properly on finalize
-    protected final void finalize() throws Throwable {
-        try {
-            this.shutdown();
-        } finally { // safe finalize, even if shutdown throws an exception
-            super.finalize();
-        }
-    }
+    
 }
