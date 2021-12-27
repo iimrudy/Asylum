@@ -81,19 +81,24 @@ public class TestCommon {
     }
 
     @Test
-    public void testIpInfo() throws Exception {
-        var ip = "1.1.1.1";
-        var current = InetAddress.getByName(ip);
-
+    public void testIpInfo() {
         Assertions.assertDoesNotThrow(() -> {
+            var ip = "1.1.1.1";
+            var current = InetAddress.getByName(ip);
             var response = IpInfo.fetchIp(current).get();
             Assertions.assertEquals(response.getIp(), ip);
         });
     }
 
     @Test
-    public void testNekoBin() throws Exception {
-        System.out.println(NekobinUploader.upload("SOME TEXT TO UPLOAD LOLOLOLOLO").get());
+    public void testNekoBin() {
+        Assertions.assertDoesNotThrow(() -> {
+            var response = NekobinUploader.upload("Some Text to Upload").get();
+            Assertions.assertTrue(response.isOk());
+            Assertions.assertNull(response.getError());
+            Assertions.assertNotNull(response.getDocument());
+            Assertions.assertEquals("Some Text to Upload", response.getDocument().getContent());
+        });
     }
 
     private static class FakePlayer extends UuidConverter.MinecraftProfile {
