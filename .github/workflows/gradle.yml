@@ -25,7 +25,5 @@ jobs:
       uses: gradle/gradle-build-action@v2
       with:
         gradle-version: release-candidate
-    - name: Gradle Build
     - run: gradle build
-    - name: Gradle Test JUnit
     - run: gradle test
