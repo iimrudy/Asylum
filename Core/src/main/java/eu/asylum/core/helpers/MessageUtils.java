@@ -9,6 +9,8 @@ import java.util.Collection;
 public class MessageUtils {
 
     private final static int CENTER_PX = 154;
+    public static final char BAR_CHAR = '\u2588'; // full block character
+    public static final char HEAVY_VERTICAL = '\u2503'; // box drawings heavy vertical character
 
     /**
      * send chat Message to a player
@@ -68,7 +70,7 @@ public class MessageUtils {
      * @param players    player list
      **/
     public static void sendActionbarPercentagePrefix(ChatColor c1, ChatColor c2, int percentage, @NonNull Player... players) {
-        sendActionbarPercentage('\u2588', "", "", c1, c2, percentage, players);
+        sendActionbarPercentage(BAR_CHAR, "", "", c1, c2, percentage, players);
     }
 
     /**
@@ -81,7 +83,7 @@ public class MessageUtils {
      * @param players    player list
      **/
     public static void sendActionbarPercentagePrefix(String prefix, ChatColor c1, ChatColor c2, int percentage, @NonNull Player... players) {
-        sendActionbarPercentage('\u2588', prefix, "", c1, c2, percentage, players);
+        sendActionbarPercentage(BAR_CHAR, prefix, "", c1, c2, percentage, players);
     }
 
     /**
@@ -94,7 +96,7 @@ public class MessageUtils {
      * @param players    player list
      **/
     public static void sendActionbarPercentageSuffix(String suffix, ChatColor c1, ChatColor c2, int percentage, @NonNull Player... players) {
-        sendActionbarPercentage('\u2588', "", suffix, c1, c2, percentage, players);
+        sendActionbarPercentage(BAR_CHAR, "", suffix, c1, c2, percentage, players);
     }
 
     /**
@@ -135,7 +137,7 @@ public class MessageUtils {
      * @param players    player list
      **/
     public static void sendActionbarPercentage(String prefix, String suffix, @NonNull ChatColor c1, @NonNull ChatColor c2, int percentage, @NonNull Player... players) {
-        sendActionbarPercentage('\u2588', prefix, suffix, c1, c2, percentage, players);
+        sendActionbarPercentage(BAR_CHAR, prefix, suffix, c1, c2, percentage, players);
     }
 
     public static String centerMessage(@NonNull String message) {
@@ -148,7 +150,7 @@ public class MessageUtils {
         boolean isBold = false;
 
         for (char c : message.toCharArray()) {
-            if (c == '\u00A7') {
+            if (c == ChatColor.COLOR_CHAR) {
                 previousCode = true;
             } else if (previousCode) {
                 previousCode = false;

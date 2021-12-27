@@ -5,8 +5,8 @@ import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Subcommand;
 import eu.asylum.common.utils.NekobinUploader;
 import eu.asylum.core.AsylumCore;
+import eu.asylum.core.helpers.MessageUtils;
 import eu.asylum.lobby.AsylumLobby;
-import eu.asylum.lobby.configuration.LobbyConfiguration;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -38,17 +38,17 @@ public class LobbyManagerCommand extends BaseCommand {
         var ap = AsylumCore.getInstance().getAsylumProvider().getAsylumPlayer(player);
         if (!ap.isPresent() || !ap.get().getRank().isOwnerOrAdmin()) return;
 
-        player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lArcade &8\u2503 &7Reloading configuration..."));
+        player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lArcade &8" + MessageUtils.HEAVY_VERTICAL + " &7Reloading configuration..."));
         try {
             AsylumLobby.getInstance().reload();
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lArcade &8\u2503 &7Configuration reloaded &a&nsuccessfully&8."));
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lArcade " + MessageUtils.HEAVY_VERTICAL + " &7Configuration reloaded &a&nsuccessfully&8."));
         } catch (Exception e) {
             e.printStackTrace();
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lArcade &8\u2503 &7Something went wrong wile reloading the configuration. (Watch console for errors)"));
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lArcade &8" + MessageUtils.HEAVY_VERTICAL + " &7Something went wrong wile reloading the configuration. (Watch console for errors)"));
             NekobinUploader.upload(ExceptionUtils.getStackTrace(e)).thenAccept(result -> {
                 Bukkit.getLogger().warning("Uploaded error to nekobin: " + result.isOk() + "   " + result.getError());
                 if (result.isOk()) {
-                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lArcade &8\u2503 &7Nekobin link: &a" + result.getDocument().asUrl()));
+                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lArcade &8" + MessageUtils.HEAVY_VERTICAL + " &7Nekobin link: &a" + result.getDocument().asUrl()));
                 }
             });
         }
