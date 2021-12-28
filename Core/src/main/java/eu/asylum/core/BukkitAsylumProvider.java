@@ -3,6 +3,7 @@ package eu.asylum.core;
 import eu.asylum.common.AsylumProvider;
 import eu.asylum.common.configuration.ConfigurationContainer;
 import lombok.NonNull;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -62,6 +63,15 @@ public class BukkitAsylumProvider extends AsylumProvider<Player> implements List
     @EventHandler
     public void onPlayerJoinEvent(@NonNull PlayerJoinEvent event) {
         Bukkit.getScheduler().runTaskAsynchronously(AsylumCore.getInstance(), () -> onJoin(event.getPlayer()));
+        AsylumCore.getInstance().getAsylumProvider().getAsylumPlayerAsync(event.getPlayer()).thenAccept(asylumPlayer -> {
+            if (asylumPlayer.isPresent()) {
+                var prefix = asylumPlayer.get().getRank().getPrefix();
+                if (prefix.length() > 0) {
+                    prefix = prefix + " ";
+                }
+                asylumPlayer.get().getPlayerObject().playerListName(MiniMessage.get().parse(prefix + "<white>" + asylumPlayer.get().getUsername()));
+            }
+        });
     }
 
     @EventHandler

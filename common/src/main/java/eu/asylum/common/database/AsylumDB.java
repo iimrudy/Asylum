@@ -31,7 +31,7 @@ public class AsylumDB {
     private final StatefulRedisPubSubConnection<String, String> pubSubConnectionReceiver; // receive message
     private final StatefulRedisPubSubConnection<String, String> pubSubConnectionSender; // send message
 
-    public AsylumDB(@NonNull final String redisUri, @NonNull final String mongoUri) {
+    public AsylumDB(@NonNull final String redisUri, @NonNull final String mongoUri, String... channels) {
         // Syntax: redis://[password@]host[:port][/databaseNumber]
         // Syntax: redis://[username:password@]host[:port][/databaseNumber]
 
@@ -53,9 +53,9 @@ public class AsylumDB {
         this.redisConnection = redisClient.connect();
         this.pubSubConnectionReceiver = redisClient.connectPubSub();
         this.pubSubConnectionSender = redisClient.connectPubSub();
-
-        this.pubSubConnectionReceiver.sync().subscribe(""); // Subscribe channels here
-
+        if (channels.length > 0) {
+            this.pubSubConnectionReceiver.sync().subscribe(channels); // Subscribe channels here
+        }
     }
 
     public MongoDatabase getMongoDatabase(String name) {
@@ -147,5 +147,5 @@ public class AsylumDB {
         this.pubSubConnectionSender.close();
         this.redisClient.shutdown();
     }
-    
+
 }

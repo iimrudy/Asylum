@@ -5,7 +5,7 @@ import lombok.Getter;
 @Getter
 public enum Rank {
 
-    OWNER("OWNER", "&6&lOWNER", 0),
+    OWNER("OWNER", "<bold><gradient:#7D3FB1:#E55554:#F8821D>OWNER</gradient></bold>", 0),
     ADMIN("ADMIN", "&4&lADMIN", 1),
     MODERATOR("MODERATOR", "&b&lMODERATOR", 2),
     DEFAULT("DEFAULT", "", 3),

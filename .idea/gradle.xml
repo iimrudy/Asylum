@@ -12,9 +12,9 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/Cloud" />
             <option value="$PROJECT_DIR$/Core" />
             <option value="$PROJECT_DIR$/Lobby" />
-            <option value="$PROJECT_DIR$/ServerLauncher" />
             <option value="$PROJECT_DIR$/common" />
           </set>
         </option>

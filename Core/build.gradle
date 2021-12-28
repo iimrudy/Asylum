@@ -19,6 +19,7 @@ dependencies {
     implementation("com.google.guava:guava:31.0.1-jre")
     compileOnly fileTree(dir: '../LIBS', include: '*.jar')
     compileOnly group: "com.comphenix.protocol", name: "ProtocolLib", version: "4.7.0";
+    implementation "net.kyori:adventure-text-minimessage:4.1.0-SNAPSHOT"
     //implementation(files("../LIBS/PacketWrapper.jar"))
 }
 

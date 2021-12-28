@@ -2,6 +2,5 @@ rootProject.name = 'Asylum'
 include 'Core'
 include 'Lobby'
 include 'common'
-include 'ServerLauncher'
-include 'ServerLauncher'
+include 'Cloud'
 

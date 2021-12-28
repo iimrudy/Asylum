@@ -2,9 +2,13 @@ package eu.asylum.lobby;
 
 import co.aikar.commands.BukkitCommandManager;
 import eu.asylum.core.configuration.YamlConfigurationContainer;
+import eu.asylum.core.gui.GuiListener;
 import eu.asylum.core.helpers.AsylumScoreBoard;
+import eu.asylum.lobby.commands.staff.BuildCommand;
 import eu.asylum.lobby.commands.staff.LobbyManagerCommand;
 import eu.asylum.lobby.configuration.LobbyConfiguration;
+import eu.asylum.lobby.games.GamesManager;
+import eu.asylum.lobby.gui.ServerSelectorGUI;
 import eu.asylum.lobby.listener.PlayerListener;
 import kr.entree.spigradle.annotations.SpigotPlugin;
 import lombok.Getter;
@@ -12,6 +16,7 @@ import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -31,6 +36,13 @@ public class AsylumLobby extends JavaPlugin {
 
     @Getter
     private static AsylumLobby instance;
+    @Getter
+    private final List<Player> buildingPlayers = new ArrayList<>();
+    private final ServerSelectorGUI serverSelectorGUI = new ServerSelectorGUI();
+    @Getter
+    private Location lobbyLocation;
+    @Getter
+    private GamesManager gamesManager;
     private int animationTick = 0;
     private BukkitCommandManager commandManager;
     private YamlConfigurationContainer configuration;
@@ -43,21 +55,21 @@ public class AsylumLobby extends JavaPlugin {
             if (board == null) return;
 
             if (!this.scoreboardTitle.isEmpty()) {
-                board.setTitle(this.scoreboardTitle);
+                board.setTitle(PlaceholderAPI.setPlaceholders(player, this.scoreboardTitle));
             } else {
                 board.setTitle(PlaceholderAPI.setPlaceholders(player, animations[animationTick]));
             }
-
-            board.setSlotsFromList(this.scoreboardList);
+            List<String> placeholdered = new ArrayList<>();
+            for (var s : scoreboardList) {
+                placeholdered.add(PlaceholderAPI.setPlaceholders(player, s));
+            }
+            board.setSlotsFromList(placeholdered);
         });
 
         animationTick++;
-
-        if (animationTick >= animations.length)
-            animationTick = 0;
+        if (animationTick >= animations.length) animationTick = 0;
     };
-    @Getter
-    private Location lobbyLocation;
+
 
     @Override
     public void onEnable() {
@@ -65,6 +77,7 @@ public class AsylumLobby extends JavaPlugin {
         this.getServer().getScheduler().runTaskTimerAsynchronously(this, scoreboardTask, 10L, 60L);
         this.commandManager = new BukkitCommandManager(this);
         this.commandManager.registerCommand(new LobbyManagerCommand());
+        this.commandManager.registerCommand(new BuildCommand());
         File path = new File(getDataFolder(), "AsylumLobby.yml");
 
         try {
@@ -80,8 +93,10 @@ public class AsylumLobby extends JavaPlugin {
         }
 
         this.loadData();
-
         this.getServer().getPluginManager().registerEvents(new PlayerListener(), this);
+        this.getServer().getPluginManager().registerEvents((GuiListener) this.serverSelectorGUI, this);
+        this.gamesManager = new GamesManager();
+        this.getServer().getOnlinePlayers().forEach(Items::formatInventory);
     }
 
     public void reload() throws Exception {

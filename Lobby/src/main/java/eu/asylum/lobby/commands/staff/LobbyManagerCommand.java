@@ -22,7 +22,7 @@ public class LobbyManagerCommand extends BaseCommand {
     @CommandAlias("sethub|setlobby")
     public void setLobby(Player player) {
         var ap = AsylumCore.getInstance().getAsylumProvider().getAsylumPlayer(player);
-        if (!ap.isPresent() || !ap.get().getRank().isOwnerOrAdmin()) return;
+        if (ap.isEmpty() || !ap.get().getRank().isOwnerOrAdmin()) return;
 
         player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&aLobby setted to your current location."));
         AsylumLobby.getInstance().setLobbyLocation(player.getLocation());
@@ -36,12 +36,12 @@ public class LobbyManagerCommand extends BaseCommand {
     @Subcommand("reload")
     public void reloadConfiguration(Player player) {
         var ap = AsylumCore.getInstance().getAsylumProvider().getAsylumPlayer(player);
-        if (!ap.isPresent() || !ap.get().getRank().isOwnerOrAdmin()) return;
+        if (ap.isEmpty() || !ap.get().getRank().isOwnerOrAdmin()) return;
 
         player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lArcade &8" + MessageUtils.HEAVY_VERTICAL + " &7Reloading configuration..."));
         try {
             AsylumLobby.getInstance().reload();
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lArcade " + MessageUtils.HEAVY_VERTICAL + " &7Configuration reloaded &a&nsuccessfully&8."));
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lArcade &8" + MessageUtils.HEAVY_VERTICAL + " &7Configuration reloaded &a&nsuccessfully&8."));
         } catch (Exception e) {
             e.printStackTrace();
             player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lArcade &8" + MessageUtils.HEAVY_VERTICAL + " &7Something went wrong wile reloading the configuration. (Watch console for errors)"));
@@ -57,7 +57,7 @@ public class LobbyManagerCommand extends BaseCommand {
     @Subcommand("throwexcp")
     public void throwException(Player player) {
         var ap = AsylumCore.getInstance().getAsylumProvider().getAsylumPlayer(player);
-        if (!ap.isPresent() || !ap.get().getRank().isOwnerOrAdmin()) return;
+        if (ap.isEmpty() || !ap.get().getRank().isOwnerOrAdmin()) return;
         throw new RuntimeException("SOME EXCEPTION " + System.currentTimeMillis());
     }
 

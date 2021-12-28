@@ -17,6 +17,7 @@ dependencies {
     compileOnly project(":common")
     compileOnly project(":Core")
     compileOnly project(":Lobby")
+    compileOnly project(":Cloud")
 }
 
 
@@ -49,6 +50,8 @@ subprojects {
         // apache common collections
         compileOnly 'org.hydev:HyLogger:2.1.0.378' // logging library
         compileOnly "co.aikar:acf-paper:0.5.0-SNAPSHOT" // command processor
+        compileOnly "net.kyori:adventure-text-minimessage:4.1.0-SNAPSHOT"
+
     }
 
     shadowJar {
@@ -56,7 +59,9 @@ subprojects {
         relocate 'io.lettuce', 'eu.asylum.libs.io.lettuce'
         relocate 'org.bson', 'eu.asylum.libs.org.bson'
         relocate 'org.slf4j', 'eu.asylum.libs.org.slf4j'
-        relocate 'org.apache', 'eu.asylum.libs.org.apache'
+        relocate 'org.apache.commons.lang3', 'eu.asylum.libs.org.apache.commons.lang3'
+        relocate 'org.apache.commons.text', 'eu.asylum.libs.org.apache.commons.text'
+        relocate 'org.apache.commons.collections4', 'eu.asylum.libs.org.apache.commons.collections4'
         relocate 'com.google', 'eu.asylum.libs.com.google'
         relocate 'reactor', 'eu.asylum.libs.reactor'
         relocate 'org.reactivestreams', 'eu.asylum.libs.org.reactivestreams'
