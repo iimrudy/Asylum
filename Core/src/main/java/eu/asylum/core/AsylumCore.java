@@ -23,9 +23,9 @@ import java.util.Properties;
 @SpigotPlugin
 public class AsylumCore extends JavaPlugin {
 
+    private static final RedisAsylumServerUpdate redisAsylumServerUpdate = new RedisAsylumServerUpdate();
     @Getter
     private static AsylumCore instance;
-    private static final RedisAsylumServerUpdate redisAsylumServerUpdate = new RedisAsylumServerUpdate();
     private AsylumProvider<Player> asylumProvider;
     private BukkitCommandManager commandManager;
     @Getter

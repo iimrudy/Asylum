@@ -9,6 +9,8 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
@@ -18,7 +20,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 public class FFALobbyGame extends LobbyGame {
 
-    private static ItemStack[] items = new ItemStack[]{
+    private static final ItemStack[] items = new ItemStack[]{
             new ItemStack(Material.GOLDEN_HELMET),
             new ItemStack(Material.GOLDEN_CHESTPLATE),
             new ItemStack(Material.GOLDEN_LEGGINGS),
@@ -59,7 +61,7 @@ public class FFALobbyGame extends LobbyGame {
             var component = (TextComponent) held.getItemMeta().displayName();
             if (component.content().equals("PVP Enabler") && !this.isPlayerPlaying(event.getPlayer())) {
                 new BukkitRunnable() {
-                    private long start = System.currentTimeMillis();
+                    private final long start = System.currentTimeMillis();
 
                     @Override
                     public void run() {
@@ -90,7 +92,7 @@ public class FFALobbyGame extends LobbyGame {
                 }.runTaskTimer(AsylumLobby.getInstance(), 0, 10);
             } else if (component.content().equals("PVP Disabler") && this.isPlayerPlaying(event.getPlayer())) {
                 new BukkitRunnable() {
-                    private long start = System.currentTimeMillis();
+                    private final long start = System.currentTimeMillis();
 
                     @Override
                     public void run() {
@@ -141,6 +143,16 @@ public class FFALobbyGame extends LobbyGame {
             event.setCancelled(true);
             event.getPlayer().updateInventory();
         }
+    }
+
+    @EventHandler
+    public void onBlockPlace(BlockPlaceEvent event) {
+        event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        event.setCancelled(true);
     }
 
 }

@@ -30,9 +30,10 @@ public abstract class LobbyGame implements Listener {
     public abstract void join(Player player);
 
     public void quit(Player player) {
-        playerList.remove(player);
-        Items.formatInventory(player);
-        player.teleport(AsylumLobby.getInstance().getLobbyLocation());
+        if (playerList.remove(player)) {
+            Items.formatInventory(player);
+            player.teleport(AsylumLobby.getInstance().getLobbyLocation());
+        }
     }
 
 }

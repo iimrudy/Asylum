@@ -37,10 +37,13 @@ public class Items {
 
     public static void formatInventory(Player p) {
         p.getInventory().clear();
+        p.setHealth(20);
+        p.setFoodLevel(20);
         p.getInventory().setItem(0, compass.clone());
         p.getInventory().setItem(2, chest.clone());
         p.getInventory().setItem(6, sword.clone());
         p.getInventory().setItem(8, clock.clone());
+        p.getInventory().setHeldItemSlot(0);
     }
 
 }
