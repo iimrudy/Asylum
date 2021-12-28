@@ -70,6 +70,8 @@ public class PlayerListener implements Listener {
                 if (event.getAction().equals(Action.PHYSICAL)) return;
                 AsylumLobby.getInstance().getServerSelectorGUI().openInventory(p);
                 break;
+            default:
+                break;
         }
     }
 

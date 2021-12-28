@@ -12,6 +12,9 @@ import java.nio.charset.StandardCharsets;
 @Setter
 public final class Pinger implements Serializable, Cloneable {
 
+    private static final String COLOR_CODE = "\u00A7"; // § Symbol
+    private static final String COLOR_IDK = "\u0000"; // unknown symbol
+
     private String address;
     private int port, timeout, pingVersion, protocolVersion, playersOnline, maxPlayers;
     private String gameVersion, motd, lastResponse;
@@ -50,8 +53,8 @@ public final class Pinger implements Serializable, Cloneable {
             }
 
             this.lastResponse = str.toString();
-            if (lastResponse.startsWith("\u00A7")) {
-                final String[] data = lastResponse.split("\u0000");
+            if (lastResponse.startsWith(COLOR_CODE)) {
+                final String[] data = lastResponse.split(COLOR_IDK);
                 this.setPingVersion(Integer.parseInt(data[0].substring(1)));
                 this.setProtocolVersion(Integer.parseInt(data[1]));
                 this.setGameVersion(data[2]);
@@ -59,7 +62,7 @@ public final class Pinger implements Serializable, Cloneable {
                 this.setPlayersOnline(Integer.parseInt(data[4]));
                 this.setMaxPlayers(Integer.parseInt(data[5]));
             } else {
-                final String[] data = lastResponse.split("\u00A7");
+                final String[] data = lastResponse.split(COLOR_CODE);
                 this.setMotd(data[0]);
                 this.setPlayersOnline(Integer.parseInt(data[1]));
                 this.setMaxPlayers(Integer.parseInt(data[2]));
