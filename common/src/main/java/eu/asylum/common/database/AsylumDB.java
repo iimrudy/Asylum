@@ -75,9 +75,18 @@ public class AsylumDB {
         return this.pubSubConnectionSender.sync().publish(channel, message);
     }
 
-    public RedisFuture<Long> publishMessageSync(String channel, String message) {
+    public Long publishJson(String channel, @NonNull Object oj) {
+        return this.pubSubConnectionSender.sync().publish(channel, Constants.get().getGson().toJson(oj));
+    }
+
+    public RedisFuture<Long> publishMessageAsync(String channel, String message) {
         return this.pubSubConnectionSender.async().publish(channel, message);
     }
+
+    public RedisFuture<Long> publishJsonAsync(String channel, @NonNull Object obj) {
+        return this.pubSubConnectionSender.async().publish(channel, Constants.get().getGson().toJson(obj));
+    }
+
 
     public void registerRedisPubSubListener(RedisPubSubListener<String, String> listener) {
         this.pubSubConnectionReceiver.addListener(listener);

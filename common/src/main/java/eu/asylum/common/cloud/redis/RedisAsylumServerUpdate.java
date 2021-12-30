@@ -16,6 +16,9 @@ public class RedisAsylumServerUpdate extends RedisAsylumServer {
     private double tps;
     @SerializedName("onlinePlayers")
     private int onlinePlayers;
+    @SerializedName("motd")
+    private String motd;
+
 
     @Override
     public String toString() {
@@ -24,6 +27,7 @@ public class RedisAsylumServerUpdate extends RedisAsylumServer {
                 .add("ramUsage=" + ramUsage)
                 .add("tps=" + tps)
                 .add("onlinePlayers=" + onlinePlayers)
+                .add("motd=" + motd)
                 .toString();
     }
 }

@@ -2,13 +2,18 @@ package eu.asylum.core;
 
 import co.aikar.commands.BukkitCommandManager;
 import eu.asylum.common.AsylumProvider;
+import eu.asylum.common.cloud.redis.CloudChannels;
+import eu.asylum.common.cloud.redis.RedisAsylumServerShutdown;
 import eu.asylum.common.cloud.redis.RedisAsylumServerUpdate;
 import eu.asylum.common.utils.Constants;
 import eu.asylum.core.configuration.YamlConfigurationContainer;
 import eu.asylum.core.helpers.AsylumScoreBoard;
 import eu.asylum.core.listener.PlayerListener;
+import io.lettuce.core.pubsub.RedisPubSubAdapter;
 import kr.entree.spigradle.annotations.SpigotPlugin;
 import lombok.Getter;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -30,7 +35,7 @@ public class AsylumCore extends JavaPlugin {
     private BukkitCommandManager commandManager;
     @Getter
     private YamlConfigurationContainer configuration;
-    private long lastUpdate = 0;
+    private volatile long lastUpdate = 0;
     private String serverName;
 
     @Override
@@ -60,7 +65,11 @@ public class AsylumCore extends JavaPlugin {
             throw new RuntimeException(e); // re throw exception so the plugin will be disabled
         }
 
-        Bukkit.getOnlinePlayers().forEach(AsylumScoreBoard::createScore); // create score for the players online
+
+        Bukkit.getOnlinePlayers().forEach((player) -> {
+            AsylumScoreBoard.createScore(player); // create scoreboard for the players online
+            setupPrefix(player);
+        });
 
         this.getServer().getPluginManager().registerEvents(new PlayerListener(), this);
         this.getServer().getPluginManager().registerEvents((Listener) asylumProvider, this);
@@ -70,10 +79,24 @@ public class AsylumCore extends JavaPlugin {
             if (System.currentTimeMillis() - lastUpdate > 60000) { // send update every minute
                 sendUpdate();
             }
-
         }, 0, 20L); // send update every minute
 
         this.getServer().getScheduler().runTaskTimer(this, new TpsCalculator(), 0, 1);
+        this.getAsylumProvider().getAsylumDB().getPubSubConnectionReceiver().sync().subscribe(CloudChannels.SERVER_SHUTDOWN.getChannel());
+        this.getAsylumProvider().getAsylumDB().getPubSubConnectionReceiver().addListener(new RedisPubSubAdapter<>() {
+            @Override
+            public void message(String channel, String message) {
+                Bukkit.getScheduler().runTask(AsylumCore.this, () -> {
+                    if (channel.equalsIgnoreCase(CloudChannels.SERVER_SHUTDOWN.getChannel())) {
+                        getLogger().warning("Received shutdown message from cloud");
+                        var msg = Constants.get().getGson().fromJson(message, RedisAsylumServerShutdown.class);
+                        if (msg.getServerName().equals(getServerName())) { // is this server?
+                            Bukkit.shutdown();
+                        }
+                    }
+                });
+            }
+        });
     }
 
     @Override
@@ -83,7 +106,7 @@ public class AsylumCore extends JavaPlugin {
     }
 
     public void sendUpdate() {
-        if (System.currentTimeMillis() - lastUpdate < 1000) { // 1 second of delay beetween updates
+        if (System.currentTimeMillis() - lastUpdate < 1000) { // 1 second of delay between updates
             return;
         }
         lastUpdate = System.currentTimeMillis();
@@ -99,12 +122,29 @@ public class AsylumCore extends JavaPlugin {
             redisAsylumServerUpdate.setOnlinePlayers(onlinePlayers);
             redisAsylumServerUpdate.setTps(tps);
             redisAsylumServerUpdate.setRamUsage(usedMemory);
-            asylumProvider.getAsylumDB().publishMessageSync("asylum_cloud_server_update",
-                    Constants.get()
-                            .getGson()
-                            .toJson(redisAsylumServerUpdate)
-            ).thenAccept((x) -> System.out.println("[AsylumCore] Server update sent to cloud"));
+            redisAsylumServerUpdate.setMotd(getMotd());
+            asylumProvider.getAsylumDB().publishJson(CloudChannels.SERVER_UPDATE.getChannel(), redisAsylumServerUpdate);
         });
+    }
+
+    public final void setupPrefix(Player player) {
+        asylumProvider.getAsylumPlayerAsync(player).thenAccept(asylumPlayer -> {
+            if (asylumPlayer.isPresent() && player.isOnline()) {
+                var prefix = asylumPlayer.get().getRank().getPrefix();
+                if (prefix.length() > 0) {
+                    prefix = prefix + " ";
+                }
+                asylumPlayer.get().getPlayerObject().playerListName(MiniMessage.get().parse(prefix + "<white>" + asylumPlayer.get().getUsername()));
+            }
+        });
+    }
+
+    public String getMotd() {
+        return MinecraftServer.getServer().getMotd();
+    }
+
+    public void setMotd(String m) {
+        MinecraftServer.getServer().setMotd(m);
     }
 
 }

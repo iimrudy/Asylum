@@ -1,6 +1,7 @@
 package eu.asylum.common;
 
 import com.mongodb.client.model.Filters;
+import eu.asylum.common.cloud.ServerRepository;
 import eu.asylum.common.configuration.AsylumConfiguration;
 import eu.asylum.common.configuration.ConfigurationContainer;
 import eu.asylum.common.data.AsylumPlayer;
@@ -27,14 +28,17 @@ public abstract class AsylumProvider<T> {
 
     @Getter
     private final AsylumDB asylumDB;
-
+    @Getter
+    private final ServerRepository repository;
     private final Object _lock = new Object();
 
     public AsylumProvider(@NonNull ConfigurationContainer<?> configurationContainer) {
         this.configurationContainer = configurationContainer;
         AsylumConfiguration.setConfigurationContainer(this.configurationContainer);
         this.asylumDB = new AsylumDB(AsylumConfiguration.REDIS_URI.getString(), AsylumConfiguration.MONGODB_URI.getString());
+        this.repository = new ServerRepository(this.asylumDB);
         getOnlinePlayers().forEach(this::getAsylumPlayerAsync);
+
     }
 
     /**

@@ -39,25 +39,18 @@ public class GuiListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent event) {
-        System.out.println("c1");
-        if (!(event.getWhoClicked() instanceof Player)) return;
-        System.out.println("c2");
+        if (!(event.getWhoClicked() instanceof Player player)) return;
         if (!event.getView().title().equals(this.title)) return;
-
 
         event.setCancelled(true);
 
         final ItemStack clickedItem = event.getCurrentItem();
 
         // verify current item is not null
-        System.out.println("c3");
         if (clickedItem == null || clickedItem.getType().isAir()) return;
 
-        var player = (Player) event.getWhoClicked();
-        System.out.println("for");
         for (var item : this.guiItemList) {
             if (item.getItemBuilder().build(player).isSimilar(clickedItem)) {
-                System.out.println("FOUND ITEM");
                 item.getOnItemClick().onItemClick(player, clickedItem, event.getInventory());
                 break;
             }

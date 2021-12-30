@@ -13,8 +13,16 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
     implementation(project(":common"))
+    implementation(group: 'commons-io', name: 'commons-io', version: '2.8.0')
+    implementation group: 'org.jline', name: 'jline', version: '3.19.0'
 }
 
 test {
     useJUnitPlatform()
+}
+
+jar {
+    manifest {
+        attributes('Main-Class': 'eu.asylum.cloud.Main')
+    }
 }

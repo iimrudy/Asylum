@@ -33,6 +33,7 @@ public final class Pinger implements Serializable, Cloneable {
 
 
     public boolean ping() {
+
         try {
             Socket socket = new Socket();
             socket.setSoTimeout(this.timeout);
@@ -73,6 +74,9 @@ public final class Pinger implements Serializable, Cloneable {
             inputStream.close();
             socket.close();
         } catch (IOException exception) {
+            this.pingVersion = -1;
+            this.protocolVersion = -1;
+            this.playersOnline = -1;
             return false;
         }
         return true;
@@ -80,18 +84,7 @@ public final class Pinger implements Serializable, Cloneable {
 
     @Override
     public String toString() {
-        String sb = "Pinger{" + "address='" + address + '\'' +
-                ", port=" + port +
-                ", timeout=" + timeout +
-                ", pingVersion=" + pingVersion +
-                ", protocolVersion=" + protocolVersion +
-                ", playersOnline=" + playersOnline +
-                ", maxPlayers=" + maxPlayers +
-                ", gameVersion='" + gameVersion + '\'' +
-                ", motd='" + motd + '\'' +
-                ", lastResponse='" + lastResponse + '\'' +
-                '}';
-        return sb;
+        return new StringBuilder().append("Pinger{").append("address='").append(address).append('\'').append(", port=").append(port).append(", timeout=").append(timeout).append(", pingVersion=").append(pingVersion).append(", protocolVersion=").append(protocolVersion).append(", playersOnline=").append(playersOnline).append(", maxPlayers=").append(maxPlayers).append(", gameVersion='").append(gameVersion).append('\'').append(", motd='").append(motd).append('\'').append(", lastResponse='").append(lastResponse).append('\'').append('}').toString();
     }
 
     public Object clone() throws CloneNotSupportedException {

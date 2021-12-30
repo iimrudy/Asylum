@@ -1,5 +1,6 @@
 package eu.asylum.core.helpers;
 
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -60,8 +61,8 @@ public class AsylumScoreBoard {
     }
 
     public void setTitle(String title) {
-        title = ChatColor.translateAlternateColorCodes('&', title);
-        sidebar.setDisplayName(title.length() > 32 ? title.substring(0, 32) : title);
+        title = title.length() > 128 ? title.substring(0, 128) : title;
+        sidebar.displayName(MiniMessage.get().parse(title));
     }
 
     public void setSlot(int slot, String text) {
@@ -74,8 +75,8 @@ public class AsylumScoreBoard {
         if (!scoreboard.getEntries().contains(entry)) {
             sidebar.getScore(entry).setScore(slot);
         }
-        team.setPrefix(row.getPrefix());
-        team.setSuffix(row.getSuffix());
+        team.prefix(MiniMessage.markdown().parse(row.getPrefix()));
+        team.suffix(MiniMessage.markdown().parse(row.getSuffix()));
     }
 
     public void removeSlot(int slot) {
@@ -127,27 +128,27 @@ public class AsylumScoreBoard {
 
         public ScoreboardRow(String row) {
             row = ChatColor.translateAlternateColorCodes('&', row);
-            if (row.length() <= 16) {
+            if (row.length() <= 64) {
                 prefix = row;
                 suffix = "";
             } else {     //up to 16+16, color pair is in single part
                 int cut = findCutPoint(row);
                 prefix = row.substring(0, cut);
-                suffix = continueColors(prefix) + row.substring(cut, row.length());
+                suffix = continueColors(prefix) + row.substring(cut);
 
-                if (suffix.length() > 16) {
-                    suffix = suffix.substring(0, 16);
+                if (suffix.length() > 64) {
+                    suffix = suffix.substring(0, 64);
                 }
             }
         }
 
         private int findCutPoint(String s) {
-            for (int i = 16; i > 0; i--) {
+            for (int i = 64; i > 0; i--) {
                 if (s.charAt(i - 1) == ChatColor.COLOR_CHAR && ChatColor.getByChar(s.charAt(i)) != null)
                     continue;
                 return i;
             }
-            return 16;
+            return 64;
         }
 
         private String continueColors(String prefix) {
