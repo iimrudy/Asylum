@@ -52,8 +52,6 @@ public enum ServerType {
     public Server createServer(String name, String host, int port) {
         Server server = new Server();
         server.setServerType(this);
-        server.setMinRam(minRam);
-        server.setMaxRam(maxRam);
         server.setIp(host);
         server.setPort(port);
         server.setName(name);

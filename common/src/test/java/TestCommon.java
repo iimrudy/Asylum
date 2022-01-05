@@ -93,6 +93,7 @@ public class TestCommon {
                         count += Files.readAllLines(f.toPath()).size();
                     }
                 } catch (Exception e) {
+                    // ignored it's fine
                 }
             }
         }

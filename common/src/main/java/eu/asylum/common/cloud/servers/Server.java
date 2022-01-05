@@ -23,20 +23,8 @@ public class Server implements Serializable {
     @SerializedName("port")
     protected int port; // server port
 
-    @SerializedName("minRam")
-    protected int minRam; // min given ram in MBytes
-
-    @SerializedName("maxRam")
-    protected int maxRam; // max given ram in MBytes
-
-    @SerializedName("maxPlayers")
-    protected int maxPlayers; // max Players on this server
-
     @SerializedName("serverType")
     protected ServerType serverType; // server type
-
-    @SerializedName("isPersistent")
-    protected boolean isPersistent; // don't delete server on shutdown
 
     @Exclude
     protected RedisCloudUpdate serverStatus = new RedisCloudUpdate(); // server status

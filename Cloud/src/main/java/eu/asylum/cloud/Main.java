@@ -12,9 +12,6 @@ public class Main {
         server.setName("UNKNOWN-1");
         server.setPort(25565);
         server.setIp("127.0.0.1");
-        server.setMinRam(512);
-        server.setMaxRam(1024);
-        server.setMaxPlayers(60);
         server.setServerType(ServerType.LOBBY);
         System.out.println(Constants.get().getGson().toJson(server));
         System.out.println(Constants.get().getGson().toJson(new RedisCloudAdd()));

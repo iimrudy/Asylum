@@ -30,7 +30,7 @@ public class ServerRepository extends RedisPubSubAdapter<String, String> {
 
     public ServerRepository(String redisUri, String mongoUri) {
         RedisURI uri = RedisURI.create(redisUri);
-        uri.setDatabase(Constants.get().REDIS_DB_CLOUD);
+        //uri.setDatabase(Constants.get().REDIS_DB_CLOUD);
         this.asylumDB = new AsylumDB(uri, mongoUri);
 
         for (CloudChannels channels : CloudChannels.values()) {
@@ -75,8 +75,9 @@ public class ServerRepository extends RedisPubSubAdapter<String, String> {
             }
         } else if (channel.equals(CloudChannels.SERVER_DELETE.getChannel())) {
             var delete = Constants.get().getGson().fromJson(message, RedisCloudDelete.class);
+            var c = getByName(delete.getServer().getName());
             if (removeServer(delete.getServer().getName())) {
-                getByName(delete.getServer().getName()).ifPresent(this::onServerDelete); // call onServerDelete event
+                c.ifPresent(this::onServerDelete); // call onServerDelete event
                 // System.out.println("--== Unregistered a new Server (" + delete.getServer().getName() + ") ==--");
             } else {
                 System.out.println("ServerRepository: Server " + delete.getServer().getName() + " not deleted idk whys");
