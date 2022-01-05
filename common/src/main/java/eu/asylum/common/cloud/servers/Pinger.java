@@ -1,15 +1,13 @@
 package eu.asylum.common.cloud.servers;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
-@Getter
-@Setter
+@Data
 public final class Pinger implements Serializable, Cloneable {
 
     private static final String COLOR_CODE = "\u00A7"; // § Symbol
@@ -33,7 +31,8 @@ public final class Pinger implements Serializable, Cloneable {
 
 
     public boolean ping() {
-
+        // don't know how this works - just found into the protocol wiki of minecraft
+        // just edited a bit of it to make it work
         try {
             Socket socket = new Socket();
             socket.setSoTimeout(this.timeout);
@@ -84,7 +83,7 @@ public final class Pinger implements Serializable, Cloneable {
 
     @Override
     public String toString() {
-        return new StringBuilder().append("Pinger{").append("address='").append(address).append('\'').append(", port=").append(port).append(", timeout=").append(timeout).append(", pingVersion=").append(pingVersion).append(", protocolVersion=").append(protocolVersion).append(", playersOnline=").append(playersOnline).append(", maxPlayers=").append(maxPlayers).append(", gameVersion='").append(gameVersion).append('\'').append(", motd='").append(motd).append('\'').append(", lastResponse='").append(lastResponse).append('\'').append('}').toString();
+        return "Pinger{address='%s', port=%d, timeout=%d, pingVersion=%d, protocolVersion=%d, playersOnline=%d, maxPlayers=%d, gameVersion='%s', motd='%s', lastResponse='%s'}".formatted(address, port, timeout, pingVersion, protocolVersion, playersOnline, maxPlayers, gameVersion, motd, lastResponse);
     }
 
     public Object clone() throws CloneNotSupportedException {

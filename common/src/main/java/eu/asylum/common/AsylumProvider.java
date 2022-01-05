@@ -10,8 +10,10 @@ import eu.asylum.common.database.AsylumDB;
 import eu.asylum.common.mongoserializer.MongoSerializer;
 import eu.asylum.common.utils.Constants;
 import eu.asylum.common.utils.TaskWaiter;
+import io.lettuce.core.RedisURI;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Synchronized;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import java.util.*;
@@ -22,23 +24,22 @@ public abstract class AsylumProvider<T> {
 
     private final Map<T, AsylumPlayer<T>> asylumPlayerMap = new ConcurrentHashMap<>();
     // private final List<String> fetchingUUIDS = Collections.synchronizedList(new ArrayList<String>());
-    private final Map<String, TaskWaiter> uuidLatchMap = new ConcurrentHashMap<>();
+    private final Map<String, TaskWaiter> uuidWaiterMap = new ConcurrentHashMap<>();
     @Getter
     private final ConfigurationContainer<?> configurationContainer;
 
     @Getter
     private final AsylumDB asylumDB;
-    @Getter
-    private final ServerRepository repository;
     private final Object _lock = new Object();
+    private ServerRepository repository = null;
 
     public AsylumProvider(@NonNull ConfigurationContainer<?> configurationContainer) {
         this.configurationContainer = configurationContainer;
         AsylumConfiguration.setConfigurationContainer(this.configurationContainer);
-        this.asylumDB = new AsylumDB(AsylumConfiguration.REDIS_URI.getString(), AsylumConfiguration.MONGODB_URI.getString());
-        this.repository = new ServerRepository(this.asylumDB);
+        RedisURI redisURI = RedisURI.create(AsylumConfiguration.REDIS_URI.getString());
+        redisURI.setDatabase(0);
+        this.asylumDB = new AsylumDB(redisURI, AsylumConfiguration.MONGODB_URI.getString());
         getOnlinePlayers().forEach(this::getAsylumPlayerAsync);
-
     }
 
     /**
@@ -46,19 +47,18 @@ public abstract class AsylumProvider<T> {
      *
      * @param t return an Optional<AsylumPlayer> given the t object
      **/
-
     public Optional<AsylumPlayer<T>> getAsylumPlayer(@NonNull T t) {
         synchronized (_lock) {
             var ap = this.asylumPlayerMap.get(t);
             if (ap == null) { // fetch from the database, the player is not in the cache
 
-                TaskWaiter waiter = uuidLatchMap.get(getUsername(t).toLowerCase());
+                TaskWaiter waiter = uuidWaiterMap.get(getUsername(t).toLowerCase());
 
                 if (waiter == null) {
                     waiter = new TaskWaiter();
                     // System.out.println("WAITER CREATED");
 
-                    uuidLatchMap.put(getUsername(t).toLowerCase(), waiter);
+                    uuidWaiterMap.put(getUsername(t).toLowerCase(), waiter);
 
                     var collection = this.asylumDB.getMongoCollection("asylum", "users");
                     var d = collection.find(Filters.eq("_id", getUUID(t).toString())).first();
@@ -72,11 +72,10 @@ public abstract class AsylumProvider<T> {
                         collection.insertOne(MongoSerializer.serialize(ap)); // insert into db
                     }
 
-
                     if (isOnline(t)) { // fix zombie object caused by player that join and leave fast
                         this.asylumPlayerMap.put(t, ap);
                     }
-                    this.uuidLatchMap.remove(getUsername(t).toLowerCase());
+                    this.uuidWaiterMap.remove(getUsername(t).toLowerCase());
                     waiter.finish();
                     // System.out.println("WAITER KILLED");
                     return Optional.of(ap);
@@ -184,12 +183,18 @@ public abstract class AsylumProvider<T> {
         Constants.get().shutdown();
     }
 
-    public int getSize() {
-        synchronized (_lock) {
-            return this.asylumPlayerMap.size();
-        }
+    @NonNull
+    public ServerRepository serverRepositoryBuilder() {
+        return new ServerRepository(AsylumConfiguration.REDIS_URI.getString(), AsylumConfiguration.MONGODB_URI.getString());
     }
 
+    @Synchronized
+    public ServerRepository getRepository() {
+        if (repository == null) { // lazy init, initialized ony if needed
+            this.repository = serverRepositoryBuilder();
+        }
+        return repository;
+    }
 
     // Abstract Methods
 

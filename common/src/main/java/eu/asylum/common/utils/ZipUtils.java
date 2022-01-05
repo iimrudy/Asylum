@@ -11,7 +11,7 @@ public class ZipUtils {
 
     public static boolean unzip(File directoryTo, File zip) throws IOException {
         if (!zip.exists()) {
-            System.out.println(zip.getAbsoluteFile());
+            System.out.println("ZIP FILE DOES NOT EXIST " + zip.getAbsoluteFile());
             return false;
         }
         if (!directoryTo.exists()) {

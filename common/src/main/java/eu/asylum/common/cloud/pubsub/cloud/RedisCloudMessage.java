@@ -1,4 +1,4 @@
-package eu.asylum.common.cloud.redis;
+package eu.asylum.common.cloud.pubsub.cloud;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.*;
@@ -6,9 +6,9 @@ import lombok.*;
 @Getter
 @Setter
 @ToString
-@AllArgsConstructor
 @NoArgsConstructor
-public class RedisAsylumServerMessage extends RedisAsylumServer {
+@AllArgsConstructor
+public class RedisCloudMessage extends RedisCloudBase {
 
     @SerializedName("message")
     private String message; // any kind of message, json, simple string & so on

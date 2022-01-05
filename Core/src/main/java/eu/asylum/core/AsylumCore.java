@@ -2,9 +2,9 @@ package eu.asylum.core;
 
 import co.aikar.commands.BukkitCommandManager;
 import eu.asylum.common.AsylumProvider;
-import eu.asylum.common.cloud.redis.CloudChannels;
-import eu.asylum.common.cloud.redis.RedisAsylumServerShutdown;
-import eu.asylum.common.cloud.redis.RedisAsylumServerUpdate;
+import eu.asylum.common.cloud.enums.CloudChannels;
+import eu.asylum.common.cloud.pubsub.cloud.RedisCloudShutdown;
+import eu.asylum.common.cloud.pubsub.cloud.RedisCloudUpdate;
 import eu.asylum.common.utils.Constants;
 import eu.asylum.core.configuration.YamlConfigurationContainer;
 import eu.asylum.core.helpers.AsylumScoreBoard;
@@ -28,7 +28,7 @@ import java.util.Properties;
 @SpigotPlugin
 public class AsylumCore extends JavaPlugin {
 
-    private static final RedisAsylumServerUpdate redisAsylumServerUpdate = new RedisAsylumServerUpdate();
+    private static final RedisCloudUpdate REDIS_CLOUD_SERVER_UPDATE = new RedisCloudUpdate();
     @Getter
     private static AsylumCore instance;
     private AsylumProvider<Player> asylumProvider;
@@ -89,7 +89,7 @@ public class AsylumCore extends JavaPlugin {
                 Bukkit.getScheduler().runTask(AsylumCore.this, () -> {
                     if (channel.equalsIgnoreCase(CloudChannels.SERVER_SHUTDOWN.getChannel())) {
                         getLogger().warning("Received shutdown message from cloud");
-                        var msg = Constants.get().getGson().fromJson(message, RedisAsylumServerShutdown.class);
+                        var msg = Constants.get().getGson().fromJson(message, RedisCloudShutdown.class);
                         if (msg.getServerName().equals(getServerName())) { // is this server?
                             Bukkit.shutdown();
                         }
@@ -112,18 +112,20 @@ public class AsylumCore extends JavaPlugin {
         lastUpdate = System.currentTimeMillis();
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
             String serverName = getServerName();
+
             int onlinePlayers = Bukkit.getOnlinePlayers().size();
             double tps = Bukkit.getTPS()[0];
             long totalMemory = Runtime.getRuntime().totalMemory() / 1024 / 1024;
             long freeMemory = Runtime.getRuntime().freeMemory() / 1024 / 1024;
             long usedMemory = totalMemory - freeMemory;
 
-            redisAsylumServerUpdate.setServerName(serverName);
-            redisAsylumServerUpdate.setOnlinePlayers(onlinePlayers);
-            redisAsylumServerUpdate.setTps(tps);
-            redisAsylumServerUpdate.setRamUsage(usedMemory);
-            redisAsylumServerUpdate.setMotd(getMotd());
-            asylumProvider.getAsylumDB().publishJson(CloudChannels.SERVER_UPDATE.getChannel(), redisAsylumServerUpdate);
+            REDIS_CLOUD_SERVER_UPDATE.setServerName(serverName);
+            REDIS_CLOUD_SERVER_UPDATE.setOnlinePlayers(onlinePlayers);
+            REDIS_CLOUD_SERVER_UPDATE.setTps(tps);
+            REDIS_CLOUD_SERVER_UPDATE.setRamUsage(usedMemory);
+            REDIS_CLOUD_SERVER_UPDATE.setMotd(getMotd());
+            // asylumProvider.getRepository().getAsylumDB().redisSetJsonAsync(serverName, REDIS_CLOUD_SERVER_UPDATE); // manual update, TO-DO
+            asylumProvider.getAsylumDB().publishJson(CloudChannels.SERVER_UPDATE.getChannel(), REDIS_CLOUD_SERVER_UPDATE);
         });
     }
 

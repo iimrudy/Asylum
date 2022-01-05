@@ -1,7 +1,10 @@
 package eu.asylum.common.cloud.enums;
 
 import eu.asylum.common.cloud.servers.Server;
+import eu.asylum.common.cloud.servers.ServerClosableController;
+import eu.asylum.common.cloud.servers.ServerJoinable;
 import lombok.Getter;
+import lombok.NonNull;
 
 public enum ServerType {
 
@@ -20,14 +23,30 @@ public enum ServerType {
     private final int minRam;
     @Getter
     private final boolean isPersistent;
+    private final ServerClosableController controller;
+    private final ServerJoinable joinable;
 
+
+    ServerType(String zipFile, int maxPlayers, int minRam, int maxRam, boolean isPersistent, ServerJoinable joinable) {
+        this(zipFile, maxPlayers, minRam, maxRam, isPersistent, ServerClosableController.DEFAULT, joinable);
+    }
 
     ServerType(String zipFile, int maxPlayers, int minRam, int maxRam, boolean isPersistent) {
+        this(zipFile, maxPlayers, minRam, maxRam, isPersistent, ServerClosableController.DEFAULT, ServerJoinable.DEFAULT);
+    }
+
+    ServerType(String zipFile, int maxPlayers, int minRam, int maxRam, boolean isPersistent, ServerClosableController controller) {
+        this(zipFile, maxPlayers, minRam, maxRam, isPersistent, controller, ServerJoinable.DEFAULT);
+    }
+
+    ServerType(String zipFile, int maxPlayers, int minRam, int maxRam, boolean isPersistent, ServerClosableController controller, ServerJoinable joinable) {
         this.zipFile = zipFile;
         this.maxPlayers = maxPlayers;
         this.minRam = minRam;
         this.maxRam = maxRam;
         this.isPersistent = isPersistent;
+        this.controller = controller;
+        this.joinable = joinable;
     }
 
     public Server createServer(String name, String host, int port) {
@@ -39,6 +58,17 @@ public enum ServerType {
         server.setPort(port);
         server.setName(name);
         return server;
+    }
+
+    public boolean canClose(@NonNull Server server) {
+        if (!server.getServerType().equals(this)) {
+            throw new IllegalArgumentException("Server type does not match");
+        }
+        return this.controller.canClose(server);
+    }
+
+    public boolean canJoin(@NonNull Server server) {
+        return ServerJoinable.DEFAULT.isJoinable(server) && this.joinable.isJoinable(server);
     }
 
 }

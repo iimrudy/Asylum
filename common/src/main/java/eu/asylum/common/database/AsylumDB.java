@@ -10,6 +10,7 @@ import com.mongodb.client.MongoDatabase;
 import eu.asylum.common.utils.Constants;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisFuture;
+import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.pubsub.RedisPubSubListener;
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection;
@@ -30,11 +31,10 @@ public class AsylumDB {
     private final StatefulRedisConnection<String, String> redisConnection;
     private final StatefulRedisPubSubConnection<String, String> pubSubConnectionReceiver; // receive message
     private final StatefulRedisPubSubConnection<String, String> pubSubConnectionSender; // send message
+    private final RedisURI redisUri;
 
-    public AsylumDB(@NonNull final String redisUri, @NonNull final String mongoUri, String... channels) {
-        // Syntax: redis://[password@]host[:port][/databaseNumber]
-        // Syntax: redis://[username:password@]host[:port][/databaseNumber]
-
+    public AsylumDB(RedisURI redisUri, @NonNull final String mongoUri, String... channels) {
+        this.redisUri = redisUri;
         this.redisClient = RedisClient.create(redisUri); // "redis://127.0.0.1:6379/0"
 
         CodecRegistry pojoCodecRegistry = CodecRegistries.fromProviders(PojoCodecProvider.builder().automatic(true).build());
@@ -56,6 +56,10 @@ public class AsylumDB {
         if (channels.length > 0) {
             this.pubSubConnectionReceiver.sync().subscribe(channels); // Subscribe channels here
         }
+    }
+
+    public AsylumDB(@NonNull final String redisUri, @NonNull final String mongoUri, String... channels) {
+        this(RedisURI.create(redisUri), mongoUri, channels);
     }
 
     public MongoDatabase getMongoDatabase(String name) {
@@ -97,15 +101,15 @@ public class AsylumDB {
     /**
      * Redis set String value sync
      */
-    public void redisSet(String key, String value) {
-        this.redisConnection.sync().set(key, value);
+    public String redisSet(String key, String value) {
+        return this.redisConnection.sync().set(key, value);
     }
 
     /**
      * Redis set JSON (object will be converted to json using GoogleGson) value sync
      */
-    public void redisSetJson(String key, Object value) {
-        this.redisSet(key, Constants.get().getGson().toJson(value));
+    public String redisSetJson(String key, Object value) {
+        return this.redisSet(key, Constants.get().getGson().toJson(value));
     }
 
     /**
@@ -155,6 +159,22 @@ public class AsylumDB {
         this.pubSubConnectionReceiver.close();
         this.pubSubConnectionSender.close();
         this.redisClient.shutdown();
+    }
+
+    public long redisExists(String key) {
+        return this.redisConnection.sync().exists(key);
+    }
+
+    public RedisFuture<Long> redisExistsAsync(String key) {
+        return this.redisConnection.async().exists(key);
+    }
+
+    public long redisAppend(String key, String toAppend) {
+        return this.redisConnection.sync().append(key, toAppend);
+    }
+
+    public RedisFuture<Long> redisAppendAsync(String key, String toAppend) {
+        return this.redisConnection.async().append(key, toAppend);
     }
 
 }

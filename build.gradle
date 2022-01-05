@@ -18,6 +18,8 @@ dependencies {
     compileOnly project(":Core")
     compileOnly project(":Lobby")
     compileOnly project(":Cloud")
+    compileOnly project(":Proxy")
+
 }
 
 

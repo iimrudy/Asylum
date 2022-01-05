@@ -1,15 +1,18 @@
 package eu.asylum.common.cloud;
 
+import eu.asylum.common.cloud.enums.CloudChannels;
 import eu.asylum.common.cloud.enums.ServerType;
-import eu.asylum.common.cloud.redis.CloudChannels;
-import eu.asylum.common.cloud.redis.RedisAsylumServerAdd;
-import eu.asylum.common.cloud.redis.RedisAsylumServerDelete;
-import eu.asylum.common.cloud.redis.RedisAsylumServerUpdate;
+import eu.asylum.common.cloud.pubsub.cloud.RedisCloudAdd;
+import eu.asylum.common.cloud.pubsub.cloud.RedisCloudDelete;
+import eu.asylum.common.cloud.pubsub.cloud.RedisCloudUpdate;
 import eu.asylum.common.cloud.servers.Server;
 import eu.asylum.common.database.AsylumDB;
 import eu.asylum.common.mongoserializer.MongoSerializer;
 import eu.asylum.common.utils.Constants;
+import eu.asylum.common.utils.TaskWaiter;
+import io.lettuce.core.RedisURI;
 import io.lettuce.core.pubsub.RedisPubSubAdapter;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.Synchronized;
 
@@ -18,14 +21,18 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ServerRepository extends RedisPubSubAdapter<String, String> {
 
+    public static final double LAGGY_TPS = 16.0d;
     private final Map<ServerType, List<Server>> servers = new ConcurrentHashMap<>();
+    @Getter
     private final AsylumDB asylumDB;
-    private volatile boolean syncRunning = false;
+    private volatile TaskWaiter syncWaiter = new TaskWaiter(false);
 
 
-    public ServerRepository(AsylumDB asylumDB) {
-        this.asylumDB = asylumDB;
-        //
+    public ServerRepository(String redisUri, String mongoUri) {
+        RedisURI uri = RedisURI.create(redisUri);
+        uri.setDatabase(Constants.get().REDIS_DB_CLOUD);
+        this.asylumDB = new AsylumDB(uri, mongoUri);
+
         for (CloudChannels channels : CloudChannels.values()) {
             asylumDB.getPubSubConnectionReceiver().sync().subscribe(channels.getChannel());
         }
@@ -34,7 +41,7 @@ public class ServerRepository extends RedisPubSubAdapter<String, String> {
     }
 
     private void sync() {
-        syncRunning = true;
+        syncWaiter.start();
         this.servers.clear();
 
         for (var st : ServerType.values()) {
@@ -49,37 +56,40 @@ public class ServerRepository extends RedisPubSubAdapter<String, String> {
         for (var st : ServerType.values()) {
             System.out.println("Loaded " + this.servers.get(st).size() + " " + st.name() + " servers from database.");
         }
-        syncRunning = false;
+        syncWaiter.finish();
     }
 
     @Override
     @Synchronized
     public void message(String channel, String message) {
-        while (syncRunning) Thread.onSpinWait();
+        syncWaiter.await(); // wait the sync to finish
         if (channel.equals(CloudChannels.SERVER_UPDATE.getChannel())) {
             // a server, send his own information, ram usage, online players, tps, etc
-            var update = Constants.get().getGson().fromJson(message, RedisAsylumServerUpdate.class);
+            var update = Constants.get().getGson().fromJson(message, RedisCloudUpdate.class);
             var optionalServer = getByName(update.getServerName());
             if (optionalServer.isPresent()) {
                 optionalServer.get().setServerStatus(update);
-                System.out.println("SERVER UPDATE: " + update.getServerName());
+                this.onServerUpdate(optionalServer.get()); // call onServerUpdate event
             } else {
                 System.out.println("ServerRepository: Received update for unknown server " + update.getServerName());
             }
         } else if (channel.equals(CloudChannels.SERVER_DELETE.getChannel())) {
-            var delete = Constants.get().getGson().fromJson(message, RedisAsylumServerDelete.class);
+            var delete = Constants.get().getGson().fromJson(message, RedisCloudDelete.class);
             if (removeServer(delete.getServer().getName())) {
-                System.out.println("--== Unregistered a new Server (" + delete.getServer().getName() + ") ==--");
+                getByName(delete.getServer().getName()).ifPresent(this::onServerDelete); // call onServerDelete event
+                // System.out.println("--== Unregistered a new Server (" + delete.getServer().getName() + ") ==--");
             } else {
                 System.out.println("ServerRepository: Server " + delete.getServer().getName() + " not deleted idk whys");
             }
         } else if (channel.equals(CloudChannels.SERVER_ADD.getChannel())) {
-            var add = Constants.get().getGson().fromJson(message, RedisAsylumServerAdd.class);
+            var add = Constants.get().getGson().fromJson(message, RedisCloudAdd.class);
             servers.get(add.getServer().getServerType()).add(add.getServer());
-            System.out.println("--== Registered a new Server (" + add.getServer().getName() + ") ==--");
+            this.onServerAdd(add.getServer()); // call onServerAdd event
+            // System.out.println("--== Registered a new Server (" + add.getServer().getName() + ") ==--");
         } else if (channel.equals(CloudChannels.SYNC.getChannel())) {
             System.out.println("--== Sync Request Received ==--");
             sync();
+            this.onSync(); // call onSync event
         }
     }
 
@@ -94,7 +104,7 @@ public class ServerRepository extends RedisPubSubAdapter<String, String> {
         return Optional.empty();
     }
 
-    public boolean removeServer(@NonNull String serverName) {
+    private boolean removeServer(@NonNull String serverName) {
         var s = getByName(serverName);
         if (s.isPresent()) {
             return removeServer(s.get());
@@ -102,7 +112,7 @@ public class ServerRepository extends RedisPubSubAdapter<String, String> {
         return false;
     }
 
-    public boolean removeServer(@NonNull Server server) {
+    private boolean removeServer(@NonNull Server server) {
         for (var s : servers.entrySet()) {
             for (var srv : s.getValue()) {
                 if (srv.equals(server)) {
@@ -114,7 +124,7 @@ public class ServerRepository extends RedisPubSubAdapter<String, String> {
     }
 
     public List<Server> getLaggyServer(@NonNull ServerType type) {
-        return this.servers.get(type).stream().filter(s -> s.getServerStatus().getTps() < 16.0).toList();
+        return this.servers.get(type).stream().filter(s -> s.getServerStatus().getTps() < LAGGY_TPS).toList();
     }
 
     public List<Server> getServers(@NonNull ServerType serverType) {
@@ -154,5 +164,18 @@ public class ServerRepository extends RedisPubSubAdapter<String, String> {
         }
         return count;
     }
+
+    public void onServerUpdate(@NonNull Server server) {
+    }
+
+    public void onServerDelete(@NonNull Server server) {
+    }
+
+    public void onServerAdd(@NonNull Server server) {
+    }
+
+    public void onSync() {
+    }
+
 
 }

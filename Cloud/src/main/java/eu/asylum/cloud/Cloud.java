@@ -1,9 +1,12 @@
 package eu.asylum.cloud;
 
-import eu.asylum.cloud.shell.CommandHandler;
 import eu.asylum.common.cloud.ServerRepository;
+import eu.asylum.common.cloud.command.CommandHandler;
+import eu.asylum.common.cloud.enums.CloudChannels;
 import eu.asylum.common.cloud.enums.ServerType;
-import eu.asylum.common.cloud.redis.*;
+import eu.asylum.common.cloud.pubsub.cloud.RedisCloudAdd;
+import eu.asylum.common.cloud.pubsub.cloud.RedisCloudDelete;
+import eu.asylum.common.cloud.pubsub.cloud.RedisCloudShutdown;
 import eu.asylum.common.cloud.servers.Server;
 import eu.asylum.common.configuration.AsylumConfiguration;
 import eu.asylum.common.configuration.ConfigurationContainer;
@@ -13,7 +16,6 @@ import eu.asylum.common.mongoserializer.MongoSerializer;
 import eu.asylum.common.utils.Constants;
 import eu.asylum.common.utils.SyncConsoleCommand;
 import eu.asylum.common.utils.ZipUtils;
-import io.lettuce.core.pubsub.RedisPubSubAdapter;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Synchronized;
@@ -25,14 +27,15 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.IntStream;
+
+import static eu.asylum.common.cloud.ServerRepository.LAGGY_TPS;
 
 public class Cloud {
     private static Cloud singleton;
-
 
     private final ConfigurationContainer<?> configurationContainer;
     private final AsylumDB asylumDB;
@@ -40,6 +43,10 @@ public class Cloud {
     private final HyLogger logger = new HyLogger("Cloud");
     @Getter
     private final ServerRepository repository;
+
+    private final List<Server> notReachableServers = Collections.synchronizedList(new ArrayList<>());
+    private final List<Server> laggyServers = Collections.synchronizedList(new ArrayList<>());
+    private final CommandHandler commandHandler;
 
     public Cloud() throws Exception {
         Cloud.singleton = this;
@@ -55,9 +62,10 @@ public class Cloud {
         AsylumConfiguration.setConfigurationContainer(this.configurationContainer);
 
         this.asylumDB = new AsylumDB(AsylumConfiguration.REDIS_URI.getString(), AsylumConfiguration.MONGODB_URI.getString());
-        this.repository = new ServerRepository(this.asylumDB);
+        this.repository = new ServerRepository(AsylumConfiguration.REDIS_URI.getString(), AsylumConfiguration.MONGODB_URI.getString());
+        this.commandHandler = new CommandHandler(this.asylumDB, "");
 
-        this.asylumDB.getPubSubConnectionReceiver().addListener(new RedisPubSubAdapter<>() {
+        /*this.asylumDB.getPubSubConnectionReceiver().addListener(new RedisPubSubAdapter<>() {
             @Override
             public void message(String channel, String message) {
                 if (channel.equals(CloudChannels.SERVER_UPDATE.getChannel())) {
@@ -70,10 +78,10 @@ public class Cloud {
                     var add = Constants.get().getGson().fromJson(message, RedisAsylumServerAdd.class);
                 }
             }
-        });
+        });*/
 
         Constants.get().getExecutor().scheduleAtFixedRate(this::logic, 5, 120, java.util.concurrent.TimeUnit.SECONDS); // every 2 minutes
-        new CommandHandler().run(); // start the command handler once everything is loaded
+        new eu.asylum.cloud.shell.CommandHandler().run(); // start the command handler once everything is loaded
     }
 
     private static int findFreePort() {
@@ -92,7 +100,7 @@ public class Cloud {
     }
 
     // Thread-Safe singleton getter.
-    public static synchronized Cloud getInstance() {
+    public static Cloud getInstance() {
         if (singleton == null) {
             synchronized (Cloud.class) {
                 if (singleton == null) {
@@ -107,43 +115,100 @@ public class Cloud {
         return singleton;
     }
 
-    private final void logic() {
-        while (running.get()) {
-            // host servers if needed
-            // stop laggy servers - (don't stop in game servers)
+    private void logic() {
+        logger.log("Starting logic");
+        // host servers if needed
+        // stop laggy servers - (don't stop in game servers)
+        var newServers = new HashMap<ServerType, Integer>();
+        for (var serverType : ServerType.values()) {
+            newServers.put(serverType, 0);
         }
-    }
 
-    public Optional<Server> hostServer(ServerType type) {
-        int port = findFreePort();
-        String name = getFirstFreeServerName(type);
-        File pathTo = new File("./servers/" + name);
-        File templatePath = new File("./template/" + type.getZipFile());
-        if (pathTo.exists()) {
-            if (type.isPersistent()) {
-                return hostServer0(type.createServer(name, "127.0.0.1", port)); // start the server - cuz is persistent we can reuse old files
-            } else {
-                try {
-                    FileUtils.deleteDirectory(pathTo);
-                } catch (IOException e) {
-                    e.printStackTrace();
+        for (var server : this.repository.getServers()) {
+            if (server.getPinger().ping()) { // is server pingable ?
+                this.notReachableServers.remove(server); // if was not reachable, remove it the server is now reachable
+                if (server.getServerStatus() != null) {
+                    if (server.getServerStatus().getTps() < LAGGY_TPS) {
+                        // this is a laggy server
+                        if (this.laggyServers.contains(server)) {
+                            if (server.getServerType().canClose(server)) { // can the server be closed ?
+                                logger.warning("Closing laggy server " + server.getName());
+                                graciouslyKill(server);
+                                newServers.replace(server.getServerType(), newServers.get(server.getServerType()) + 1);
+                            }
+                        } else {
+                            this.laggyServers.add(server);
+                        }
+                    } else {
+                        this.laggyServers.remove(server); // remove cuz the server is not laggy anymore
+                    }
+                }
+            } else { // maybe is a dead server
+                if (this.notReachableServers.contains(server)) { // not reachable, maybe dead - going to kill it
+                    logger.warning("Server " + server.getName() + " is not reachable anymore, Killing it.");
+                    graciouslyKill(server); // this is a dead server
+                    newServers.replace(server.getServerType(), newServers.get(server.getServerType()) + 1);
+                } else { // it's not dead, but it's not reachable
+                    this.notReachableServers.add(server);
                 }
             }
         }
-        try {
-            ZipUtils.unzip(pathTo, templatePath);
-            return hostServer0(type.createServer(name, "127.0.0.1", port)); // start the server here
-        } catch (Exception e) {
-            e.printStackTrace();
+
+        for (var entry : newServers.entrySet()) {
+            IntStream.range(0, entry.getValue()).forEach(i -> hostServer(entry.getKey()));
         }
-        logger.error("Failed to host server, cant' create folders");
+    }
+
+    private Optional<Server> hostServer0(Server server) {
+        AtomicBoolean success = new AtomicBoolean(false); // atomic boolean to check if the server was successfully hosted
+        new SyncConsoleCommand("bash startserver.sh " + server.getName() + " " + server.getPort() + " " + server.getMinRam() + " " + server.getMaxRam(), logs -> {
+            logger.log("Server Executed.");
+            asylumDB.publishJson(CloudChannels.SERVER_ADD.getChannel(), new RedisCloudAdd(server)); // announcing that the server is started
+            asylumDB.getMongoCollection("asylum", "cloud").insertOne(MongoSerializer.serialize(server)); // saving the server in the database
+            success.set(true); // server was successfully hosted
+        }, exc -> logger.error("Error while starting the server --> " + exc.getMessage()) /* wtf error while starting the server - problem occurred while executing the command*/
+        );
+        if (success.get()) return Optional.of(server);
         return Optional.empty();
     }
 
+
+    public Optional<Server> hostServer(ServerType type) {
+        int port = findFreePort(); // get a port
+        String name = getFirstFreeServerName(type); // get server name
+        File pathTo = new File("./servers/" + name); // init server path
+        File templatePath = new File("./template/" + type.getZipFile()); // get template path
+        if (pathTo.exists()) { // if the server-folder already exists
+            if (type.isPersistent()) { // if the server is persistent - aka data can be saved & reused
+                return hostServer0(type.createServer(name, "127.0.0.1", port)); // start the server - cuz is persistent we can reuse old files
+            } else { // server is not persistent, cloud had some problem while removing files (?) - cleaning the server folder
+                try {
+                    FileUtils.deleteDirectory(pathTo);
+                } catch (IOException e) {
+                } // ignored
+            }
+        }
+        try {
+            if (ZipUtils.unzip(pathTo, templatePath)) { // unzip the server to the directory, returns true if success
+                return hostServer0(type.createServer(name, "127.0.0.1", port)); // start the server here
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        logger.error("Failed to host server, cant' work with folders");
+        return Optional.empty();
+    }
+
+    /**
+     * Graciously kills the server, waits for it to stop and then removes it from the list of servers
+     * stop is received when the server is not responding to the ping anymore
+     * if the killing-task is still running after 60seconds, the server is killed forcefully by stopping the process
+     */
     public final void graciouslyKill(@NonNull Server server) {
-        var confirm = new RedisAsylumServerShutdown();
+        var confirm = new RedisCloudShutdown();
         confirm.setServerName(server.getName());
         asylumDB.publishJson(CloudChannels.SERVER_SHUTDOWN.getChannel(), confirm);
+        announceServerKill(server);
         Constants.get().getExecutor().schedule(() -> {
             var start = System.currentTimeMillis();
             var t = 0L;
@@ -155,7 +220,7 @@ public class Cloud {
                     }
                     t = System.currentTimeMillis();
                 }
-                if (System.currentTimeMillis() - start > 60000) { // 1 minute - server is not responding to shutdown.
+                if (System.currentTimeMillis() - start > 60000) { // 1 minute - server is not responding to shut down.
                     forceKill(server);
                     break;
                 }
@@ -164,20 +229,19 @@ public class Cloud {
     }
 
     public final void forceKill(@NonNull Server server) {
+        announceServerKill(server); // announce the server death
         new SyncConsoleCommand("fuser -k " + server.getPort() + "/tcp",
                 stringList -> logger.log("Server Killed result #-> " + stringList),
                 exception -> {
                     exception.printStackTrace();
                     logger.error("Can't kill the server");
                 });
-        cleanUpServer(server);
+        cleanUpServer(server); // cleanup server dir & remove from the lists
     }
 
     // Clean up server directory & send remove info to the database
     private void cleanUpServer(@NonNull Server server) {
-        asylumDB.getMongoCollection("asylum", "cloud").findOneAndDelete(new Document().append("name", server.getName()));
-        asylumDB.publishJson(CloudChannels.SERVER_DELETE.getChannel(), new RedisAsylumServerDelete(server));
-        if (!server.getServerType().isPersistent()) {
+        if (!server.getServerType().isPersistent()) { // if the server is not persistent - we can remove the server folder
             try {
                 FileUtils.deleteDirectory(new File("./servers/" + server.getName()));
             } catch (IOException e) {
@@ -187,17 +251,14 @@ public class Cloud {
         }
     }
 
-    private Optional<Server> hostServer0(Server server) {
-        AtomicBoolean success = new AtomicBoolean(false);
-        new SyncConsoleCommand("bash startserver.sh " + server.getName() + " " + server.getPort() + " " + server.getMinRam() + " " + server.getMaxRam(), logs -> {
-            logger.log("Server Executed.");
-            asylumDB.publishJson(CloudChannels.SERVER_ADD.getChannel(), new RedisAsylumServerAdd(server));
-            asylumDB.getMongoCollection("asylum", "cloud").insertOne(MongoSerializer.serialize(server));
-            success.set(true);
-        }, exc -> logger.error("Error while starting the server --> " + exc.getMessage()));
-        if (success.get()) return Optional.of(server);
-        return Optional.empty();
+    private void announceServerKill(@NonNull Server server) {
+        asylumDB.getMongoCollection("asylum", "cloud").findOneAndDelete(new Document().append("name", server.getName()));
+        asylumDB.publishJson(CloudChannels.SERVER_DELETE.getChannel(), new RedisCloudDelete(server));
+        // cleanup from the checks lists
+        this.notReachableServers.remove(server);
+        this.laggyServers.remove(server);
     }
+
 
     public final String getFirstFreeServerName(ServerType type) {
         int i = 0;
@@ -209,7 +270,7 @@ public class Cloud {
     }
 
     public void requestSync() {
-        asylumDB.publishMessage(CloudChannels.SYNC.getChannel(), "");
+        asylumDB.publishMessage(CloudChannels.SYNC.getChannel(), ""); // send sync requests to the servers, so all the servers will refersh ServerRepository
     }
 
     @Synchronized
@@ -221,4 +282,5 @@ public class Cloud {
     public boolean isRunning() {
         return running.get();
     }
+
 }

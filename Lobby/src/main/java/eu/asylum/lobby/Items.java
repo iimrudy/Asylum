@@ -32,7 +32,6 @@ public class Items {
         var clockItemMeta = clock.getItemMeta();
         clockItemMeta.displayName(LegacyComponentSerializer.legacyAmpersand().deserialize("&eLobby Selector"));
         clock.setItemMeta(clockItemMeta);
-
     }
 
     public static void formatInventory(Player p) {

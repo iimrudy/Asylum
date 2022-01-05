@@ -3,4 +3,5 @@ include 'Core'
 include 'Lobby'
 include 'common'
 include 'Cloud'
+include 'Proxy'
 

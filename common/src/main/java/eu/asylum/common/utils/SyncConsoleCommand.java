@@ -3,6 +3,8 @@ package eu.asylum.common.utils;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
+// execute a command into the shell synchronously
+// easy to use, just pass the command, and the callbacks in case on success and failure
 public class SyncConsoleCommand {
 
     private final String command;

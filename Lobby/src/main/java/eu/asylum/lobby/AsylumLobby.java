@@ -7,7 +7,7 @@ import eu.asylum.core.helpers.AsylumScoreBoard;
 import eu.asylum.lobby.commands.staff.BuildCommand;
 import eu.asylum.lobby.commands.staff.LobbyManagerCommand;
 import eu.asylum.lobby.configuration.LobbyConfiguration;
-import eu.asylum.lobby.games.GamesManager;
+import eu.asylum.lobby.game.GamesManager;
 import eu.asylum.lobby.gui.ServerSelectorGUI;
 import eu.asylum.lobby.listener.PlayerListener;
 import kr.entree.spigradle.annotations.SpigotPlugin;

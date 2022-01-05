@@ -1,4 +1,4 @@
-package eu.asylum.lobby.games;
+package eu.asylum.lobby.game;
 
 import eu.asylum.lobby.AsylumLobby;
 import eu.asylum.lobby.Items;

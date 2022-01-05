@@ -15,6 +15,7 @@ public class ServersCompleter implements Completer {
     @Override
     public void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
         for (Server server : Cloud.getInstance().getRepository().getServers()) {
+            // this thing should suggest the servers names - don't know how it works don't ask plz
             candidates.add(new Candidate(AttributedString.stripAnsi(server.getName()), server.getName(), null, null, null, null, true));
         }
     }

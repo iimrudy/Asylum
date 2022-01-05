@@ -4,7 +4,9 @@ import eu.asylum.common.utils.UuidConverter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
 import java.net.InetAddress;
+import java.nio.file.Files;
 import java.util.List;
 
 public class TestCommon {
@@ -80,6 +82,23 @@ public class TestCommon {
         });
     }
 
+    private static long countLines(File start, String ext) {
+        long count = 0;
+        for (File f : start.listFiles()) {
+            if (f.isDirectory()) {
+                count += countLines(f, ext); // recursive go brr
+            } else {
+                try {
+                    if (f.getName().endsWith(ext)) {
+                        count += Files.readAllLines(f.toPath()).size();
+                    }
+                } catch (Exception e) {
+                }
+            }
+        }
+        return count;
+    }
+
     @Test
     public void testIpInfo() {
         Assertions.assertDoesNotThrow(() -> {
@@ -99,6 +118,12 @@ public class TestCommon {
             Assertions.assertNotNull(response.getDocument());
             Assertions.assertEquals("Some Text to Upload", response.getDocument().getContent());
         });
+    }
+
+    @Test
+    public void lineCounter() {
+        long len = countLines(new File("../"), ".java");
+        System.out.println("Total lines (.java): " + len);
     }
 
     private static class FakePlayer extends UuidConverter.MinecraftProfile {

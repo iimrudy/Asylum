@@ -25,14 +25,14 @@ public class HostCommand extends Command {
                 if (args.length == 2) {
                     qt = Integer.parseInt(args[1]);
                 }
-                    for (int i = 0; i < qt; i++) {
-                        Optional<Server> server = Cloud.getInstance().hostServer(type);
-                        if (server.isPresent()) {
-                            getLogger().log(i + ") Server Hosted! Name: " + server.get().getName());
-                        } else {
-                            getLogger().error("Can't host the server.");
-                        }
+                for (int i = 0; i < qt; i++) {
+                    Optional<Server> server = Cloud.getInstance().hostServer(type);
+                    if (server.isPresent()) {
+                        getLogger().log(i + ") Server Hosted! Name: " + server.get().getName());
+                    } else {
+                        getLogger().error("Can't host the server.");
                     }
+                }
 
             } catch (IllegalArgumentException e) {
                 getLogger().error("Server type not found.");

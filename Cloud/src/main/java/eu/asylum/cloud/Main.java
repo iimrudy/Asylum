@@ -1,6 +1,7 @@
 package eu.asylum.cloud;
 
 import eu.asylum.common.cloud.enums.ServerType;
+import eu.asylum.common.cloud.pubsub.cloud.RedisCloudAdd;
 import eu.asylum.common.cloud.servers.Server;
 import eu.asylum.common.utils.Constants;
 
@@ -16,6 +17,7 @@ public class Main {
         server.setMaxPlayers(60);
         server.setServerType(ServerType.LOBBY);
         System.out.println(Constants.get().getGson().toJson(server));
+        System.out.println(Constants.get().getGson().toJson(new RedisCloudAdd()));
         new Cloud();
     }
 

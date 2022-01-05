@@ -1,8 +1,8 @@
-package eu.asylum.lobby.games.s;
+package eu.asylum.lobby.game.s;
 
 import eu.asylum.core.helpers.MessageUtils;
 import eu.asylum.lobby.AsylumLobby;
-import eu.asylum.lobby.games.LobbyGame;
+import eu.asylum.lobby.game.LobbyGame;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.ChatColor;

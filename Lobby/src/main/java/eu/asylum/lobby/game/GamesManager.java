@@ -1,7 +1,7 @@
-package eu.asylum.lobby.games;
+package eu.asylum.lobby.game;
 
 import eu.asylum.lobby.AsylumLobby;
-import eu.asylum.lobby.games.s.FFALobbyGame;
+import eu.asylum.lobby.game.s.FFALobbyGame;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
