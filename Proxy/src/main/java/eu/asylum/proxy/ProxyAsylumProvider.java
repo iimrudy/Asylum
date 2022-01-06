@@ -76,4 +76,6 @@ public class ProxyAsylumProvider extends AsylumProvider<Player> {
     public ServerRepository serverRepositoryBuilder() {
         return new ProxyServerRepository(AsylumConfiguration.REDIS_URI.getString(), AsylumConfiguration.MONGODB_URI.getString());
     }
+
+
 }

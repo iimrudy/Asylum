@@ -29,6 +29,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
@@ -47,8 +48,10 @@ public class Cloud {
 
     private final List<Server> notReachableServers = Collections.synchronizedList(new ArrayList<>());
     private final List<Server> laggyServers = Collections.synchronizedList(new ArrayList<>());
+    private final List<String> occupiedNames = new CopyOnWriteArrayList<>();
     private final CommandHandler commandHandler;
     private final TaskWaiter logicWaiter = new TaskWaiter(true);
+    private final QueueManager queueManager;
 
     public Cloud() throws Exception {
         Cloud.singleton = this;
@@ -81,7 +84,8 @@ public class Cloud {
                 }
             }
         });*/
-
+        this.queueManager = new QueueManager(this.repository);
+        Constants.get().getExecutor().scheduleAtFixedRate(this::logic0, 5, 30L, TimeUnit.SECONDS);
         Constants.get().getExecutor().scheduleAtFixedRate(this::logic, 5, 120, java.util.concurrent.TimeUnit.SECONDS); // every 2 minutes
         new eu.asylum.cloud.shell.CommandHandler().run(); // start the command handler once everything is loaded
     }
@@ -115,6 +119,35 @@ public class Cloud {
             }
         }
         return singleton;
+    }
+
+    private void logic0() {
+        logicWaiter.await();
+        logicWaiter.start();
+        var newServers = new HashMap<ServerType, Integer>();
+        for (var serverType : ServerType.values()) {
+            newServers.put(serverType, 0);
+        }
+
+        // host servers if needed
+        for (var type : ServerType.values()) {
+            if (type == ServerType.LOBBY) { // only lobbies for now
+                int maxPlayers = type.getMaxPlayers();
+                int onlinePlayers = this.repository.getOnlinePlayers(type); // 200
+                int onlineServers = this.repository.getServers(type).size(); // 60
+                int necessary = (onlinePlayers / maxPlayers); // 200 / 60 = 3
+                if (onlineServers <= necessary) {
+                    int toHost = (onlineServers - necessary) + 2;
+                    newServers.put(type, newServers.get(type) + toHost);
+                }
+            }
+        }
+        for (var entry : newServers.entrySet()) {
+            IntStream.range(0, entry.getValue()).forEach(i -> {
+                hostServer(entry.getKey()).ifPresent(server -> logger.log("Hosting a new server (cause NEEDED) " + server.getName()));
+            });
+        }
+        logicWaiter.finish();
     }
 
     private void logic() {
@@ -163,7 +196,7 @@ public class Cloud {
 
         for (var entry : newServers.entrySet()) {
             IntStream.range(0, entry.getValue()).forEach(i -> {
-                hostServer(entry.getKey()).ifPresent(server -> logger.log("Hoster a new server (cause restart) " + server.getName()));
+                hostServer(entry.getKey()).ifPresent(server -> logger.log("Hosting a new server (cause lag/unreachable) " + server.getName()));
             });
         }
         // severs are killed here - no interference between starting and killing a server.
@@ -190,6 +223,9 @@ public class Cloud {
     public Optional<Server> hostServer(ServerType type) {
         int port = findFreePort(); // get a port
         String name = getFirstFreeServerName(type); // get server name
+        Constants.get().getExecutor().schedule(() -> {
+            this.occupiedNames.remove(name); // remove the name from the list of occupied names
+        }, 60L, TimeUnit.SECONDS);
         File pathTo = new File("./servers/" + name); // init server path
         File templatePath = new File("./template/" + type.getZipFile()); // get template path
         if (pathTo.exists()) { // if the server-folder already exists
@@ -231,14 +267,12 @@ public class Cloud {
                 if (System.currentTimeMillis() - t > 500) {
                     if (!server.getPinger().ping() && server.getPinger().getPingVersion() == -1) {
                         cleanUpServer(server);
-                        logger.log("Server cleaning-up");
                         break;
                     }
                     t = System.currentTimeMillis();
                 }
                 if (System.currentTimeMillis() - start > 60000) { // 1 minute - server is not responding to shut down.
                     forceKill(server);
-                    logger.log("Server force-killed");
                     break;
                 }
             }
@@ -266,6 +300,7 @@ public class Cloud {
                 e.printStackTrace();
             }
         }
+        this.occupiedNames.remove(server.getName()); // remove the server name from the list of occupied names
     }
 
     private void announceServerKill(@NonNull Server server) {
@@ -281,7 +316,7 @@ public class Cloud {
     public final String getFirstFreeServerName(ServerType type) {
         int i = 0;
         String name = type.name() + "-" + i;
-        while (repository.getByName(name).isPresent()) {
+        while (repository.getByName(name).isPresent() && !this.occupiedNames.contains(name)) {
             name = type.name() + "-" + (++i);
         }
         return name;

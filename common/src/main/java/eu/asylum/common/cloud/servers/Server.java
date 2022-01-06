@@ -7,6 +7,7 @@ import eu.asylum.common.mongoserializer.annotation.Exclude;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 @Data
 public class Server implements Serializable {
@@ -46,4 +47,16 @@ public class Server implements Serializable {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Server server = (Server) o;
+        return getPort() == server.getPort() && Objects.equals(getName(), server.getName()) && Objects.equals(getIp(), server.getIp()) && getServerType() == server.getServerType();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getName(), getIp(), getPort(), getServerType());
+    }
 }

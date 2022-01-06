@@ -4,6 +4,8 @@ import eu.asylum.cloud.Cloud;
 import eu.asylum.cloud.command.Command;
 import eu.asylum.common.cloud.enums.ServerType;
 
+import java.util.ArrayList;
+
 public class StopAllCommand extends Command {
 
     public StopAllCommand() {
@@ -22,13 +24,14 @@ public class StopAllCommand extends Command {
             try {
                 ServerType type = ServerType.valueOf(args[0].toUpperCase());
                 int counter = 0;
-                var servers = Cloud.getInstance().getRepository().getServers(type);
+                var servers = new ArrayList<>(Cloud.getInstance().getRepository().getServers(type));
                 for (var server : servers) {
                     if (forced) {
                         Cloud.getInstance().forceKill(server);
                     } else {
                         Cloud.getInstance().graciouslyKill(server);
                     }
+                    counter++;
                 }
                 getLogger().log("Killed (" + counter + ") Servers. Category <" + type.name() + ">.   FORCED: " + forced);
             } catch (IllegalArgumentException e) {

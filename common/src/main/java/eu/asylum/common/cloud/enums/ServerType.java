@@ -8,7 +8,7 @@ import lombok.NonNull;
 
 public enum ServerType {
 
-    LOBBY("lobby.zip", 60, 512, 1024, false),
+    LOBBY("lobby.zip", 60, 256, 512, false),
     CAKEWARS_DUOS("cakewars_duos.zip", 15, 512, 1024, false),
     CAKEWARS_SQUAD("cakewars_squad.zip", 20, 512, 1024, false),
     ;

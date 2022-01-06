@@ -163,11 +163,7 @@ public abstract class AsylumProvider<T> {
 
     public void onJoin(@NonNull T t) {
         // setup player data
-        long time = System.currentTimeMillis();
-        this.getAsylumPlayerAsync(t).thenAccept(optionalAsylumPlayer -> {
-            long end = System.currentTimeMillis();
-            System.out.println("Time to fetch player: " + (end - time) + optionalAsylumPlayer.get());
-        });
+        this.getAsylumPlayerAsync(t);
     }
 
     public void onQuit(@NonNull T t) {

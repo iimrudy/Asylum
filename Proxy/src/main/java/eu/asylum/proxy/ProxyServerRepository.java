@@ -17,6 +17,7 @@ public class ProxyServerRepository extends ServerRepository {
 
     public ProxyServerRepository(String redisUri, String mongoUri) {
         super(redisUri, mongoUri);
+        this.onSync();
     }
 
     @Override
@@ -30,9 +31,8 @@ public class ProxyServerRepository extends ServerRepository {
 
     @Override
     public void onServerDelete(@NonNull Server server) {
-        var registeredServer = proxyServerMap.get(server);
-        if (registeredServer != null)
-            Proxy.get().getServer().unregisterServer(registeredServer.getServerInfo());
+        System.out.println( server.getName() + " REMOVED -- > " + proxyServerMap.remove(server));
+        Proxy.get().getServer().unregisterServer(new ServerInfo(server.getName(), new InetSocketAddress(server.getIp(), server.getPort())));
     }
 
     @Override
@@ -42,6 +42,15 @@ public class ProxyServerRepository extends ServerRepository {
     @Override
     public void onSync() {
         var servers = new ArrayList<>(getServers());
+
+        // unregister dead servers
+        for (var server2 : this.proxyServerMap.entrySet()) {
+            if (!servers.contains(server2.getKey())) {
+                Proxy.get().getServer().unregisterServer(server2.getValue().getServerInfo());
+                this.proxyServerMap.remove(server2.getKey());
+                Proxy.get().getLogger().info("Unregistered a server #-> " + server2.getKey().getName() + "\t|" + this.proxyServerMap.size());
+            }
+        }
 
         // register new servers
         for (Server server : servers) {
@@ -53,13 +62,6 @@ public class ProxyServerRepository extends ServerRepository {
             }
         }
 
-        // unregister dead servers
-        for (var server2 : this.proxyServerMap.entrySet()) {
-            if (!servers.contains(server2.getKey())) {
-                Proxy.get().getServer().unregisterServer(server2.getValue().getServerInfo());
-                this.proxyServerMap.remove(server2.getKey(), server2.getValue());
-                Proxy.get().getLogger().info("Unregistered a server #-> " + server2.getKey().getName() + "\t|" + this.proxyServerMap.size());
-            }
-        }
+
     }
 }

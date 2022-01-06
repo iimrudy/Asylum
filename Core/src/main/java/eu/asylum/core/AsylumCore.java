@@ -3,6 +3,7 @@ package eu.asylum.core;
 import co.aikar.commands.BukkitCommandManager;
 import eu.asylum.common.AsylumProvider;
 import eu.asylum.common.cloud.enums.CloudChannels;
+import eu.asylum.common.cloud.enums.ServerType;
 import eu.asylum.common.cloud.pubsub.cloud.RedisCloudShutdown;
 import eu.asylum.common.cloud.pubsub.cloud.RedisCloudUpdate;
 import eu.asylum.common.utils.Constants;
@@ -15,13 +16,13 @@ import lombok.Getter;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.File;
-import java.io.FileReader;
+import java.io.*;
 import java.util.Properties;
 
 @Getter
@@ -41,6 +42,7 @@ public class AsylumCore extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
+        Bukkit.getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
         try {
             Properties properties = new Properties();
             properties.load(new FileReader("asylumserver.properties"));
@@ -93,6 +95,8 @@ public class AsylumCore extends JavaPlugin {
                         if (msg.getServerName().equals(getServerName())) { // is this server?
                             Bukkit.shutdown();
                         }
+                    } else if (channel.equalsIgnoreCase(CloudChannels.SYNC.getChannel())) {
+                        sendUpdate();
                     }
                 });
             }
@@ -106,7 +110,7 @@ public class AsylumCore extends JavaPlugin {
     }
 
     public void sendUpdate() {
-        if (System.currentTimeMillis() - lastUpdate < 1000) { // 1 second of delay between updates
+        if (System.currentTimeMillis() - lastUpdate < 50) { // 100 ms of delay between updates
             return;
         }
         lastUpdate = System.currentTimeMillis();
@@ -148,5 +152,6 @@ public class AsylumCore extends JavaPlugin {
     public void setMotd(String m) {
         MinecraftServer.getServer().setMotd(m);
     }
+
 
 }

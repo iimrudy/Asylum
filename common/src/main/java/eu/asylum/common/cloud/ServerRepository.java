@@ -90,7 +90,7 @@ public class ServerRepository extends RedisPubSubAdapter<String, String> {
         } else if (channel.equals(CloudChannels.SYNC.getChannel())) {
             System.out.println("--== Sync Request Received ==--");
             sync();
-            this.onSync(); // call onSync event
+            this.onSync();
         }
     }
 

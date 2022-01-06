@@ -1,8 +1,10 @@
 package eu.asylum.lobby;
 
 import co.aikar.commands.BukkitCommandManager;
+import eu.asylum.common.cloud.enums.ServerType;
 import eu.asylum.core.configuration.YamlConfigurationContainer;
 import eu.asylum.core.gui.GuiListener;
+import eu.asylum.core.gui.ServerGui;
 import eu.asylum.core.helpers.AsylumScoreBoard;
 import eu.asylum.lobby.commands.staff.BuildCommand;
 import eu.asylum.lobby.commands.staff.LobbyManagerCommand;
@@ -13,6 +15,8 @@ import eu.asylum.lobby.listener.PlayerListener;
 import kr.entree.spigradle.annotations.SpigotPlugin;
 import lombok.Getter;
 import me.clip.placeholderapi.PlaceholderAPI;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -39,6 +43,7 @@ public class AsylumLobby extends JavaPlugin {
     @Getter
     private final List<Player> buildingPlayers = new ArrayList<>();
     private final ServerSelectorGUI serverSelectorGUI = new ServerSelectorGUI();
+    private ServerGui lobbySelectorGUI;
     @Getter
     private Location lobbyLocation;
     @Getter
@@ -94,7 +99,9 @@ public class AsylumLobby extends JavaPlugin {
 
         this.loadData();
         this.getServer().getPluginManager().registerEvents(new PlayerListener(), this);
-        this.getServer().getPluginManager().registerEvents((GuiListener) this.serverSelectorGUI, this);
+        this.getServer().getPluginManager().registerEvents(this.serverSelectorGUI, this);
+        this.lobbySelectorGUI = new ServerGui(ServerType.LOBBY, LegacyComponentSerializer.legacyAmpersand().deserialize("&e&lLOBBY SELECTOR"));
+        this.getServer().getPluginManager().registerEvents(this.lobbySelectorGUI, this);
         this.gamesManager = new GamesManager();
         this.getServer().getOnlinePlayers().forEach(Items::formatInventory);
     }
