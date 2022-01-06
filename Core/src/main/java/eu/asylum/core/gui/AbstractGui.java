@@ -23,7 +23,7 @@ public abstract class AbstractGui implements Listener {
 
 
     @EventHandler(ignoreCancelled = true)
-    public void onInventoryClick(InventoryClickEvent event) {
+    public final void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
         if (!event.getView().title().equals(this.title)) return;
 
@@ -38,15 +38,16 @@ public abstract class AbstractGui implements Listener {
 
     }
 
-    protected abstract void onItemClick(Player player, ItemStack clickedItem, org.bukkit.inventory.Inventory inventory);
-
     @EventHandler
-    public void onInventoryClick(final InventoryDragEvent e) {
+    public final void inventoryDragEvent(final InventoryDragEvent e) {
         if (e.getView().title().equals(this.title)) {
             e.setCancelled(true);
         }
     }
 
     public abstract void openInventory(Player player);
+
+    protected abstract void onItemClick(Player player, ItemStack clickedItem, org.bukkit.inventory.Inventory inventory);
+
 
 }
