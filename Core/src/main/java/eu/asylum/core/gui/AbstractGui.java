@@ -8,9 +8,6 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public abstract class AbstractGui implements Listener {
 
     protected final int size;
@@ -35,7 +32,6 @@ public abstract class AbstractGui implements Listener {
         if (clickedItem == null || clickedItem.getType().isAir()) return;
 
         onItemClick(player, clickedItem, event.getView().getTopInventory());
-
     }
 
     @EventHandler

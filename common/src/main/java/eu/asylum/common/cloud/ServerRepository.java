@@ -15,6 +15,7 @@ import io.lettuce.core.pubsub.RedisPubSubAdapter;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Synchronized;
+import org.hydev.logger.HyLogger;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,12 +26,12 @@ public class ServerRepository extends RedisPubSubAdapter<String, String> {
     private final Map<ServerType, List<Server>> servers = new ConcurrentHashMap<>();
     @Getter
     private final AsylumDB asylumDB;
-    private volatile TaskWaiter syncWaiter = new TaskWaiter(false);
+    private final HyLogger logger = new HyLogger("ServerRepository");
+    private TaskWaiter syncWaiter = new TaskWaiter(false);
 
 
     public ServerRepository(String redisUri, String mongoUri) {
         RedisURI uri = RedisURI.create(redisUri);
-        //uri.setDatabase(Constants.get().REDIS_DB_CLOUD);
         this.asylumDB = new AsylumDB(uri, mongoUri);
 
         for (CloudChannels channels : CloudChannels.values()) {
@@ -49,12 +50,12 @@ public class ServerRepository extends RedisPubSubAdapter<String, String> {
         }
         // fetch servers from db
         var collection = asylumDB.getMongoCollection("asylum", "cloud");
-        collection.find().forEach((document) -> {
+        collection.find().forEach(document -> {
             Server server = MongoSerializer.deserialize(document, Server.class);
             this.servers.get(server.getServerType()).add(server);
         });
         for (var st : ServerType.values()) {
-            System.out.println("Loaded " + this.servers.get(st).size() + " " + st.name() + " servers from database.");
+            logger.log("Loaded " + this.servers.get(st).size() + " " + st.name() + " servers from database.");
         }
         syncWaiter.finish();
     }
@@ -71,24 +72,22 @@ public class ServerRepository extends RedisPubSubAdapter<String, String> {
                 optionalServer.get().setServerStatus(update);
                 this.onServerUpdate(optionalServer.get()); // call onServerUpdate event
             } else {
-                System.out.println("ServerRepository: Received update for unknown server " + update.getServerName());
+                logger.warning("ServerRepository: Received update for unknown server " + update.getServerName());
             }
         } else if (channel.equals(CloudChannels.SERVER_DELETE.getChannel())) {
             var delete = Constants.get().getGson().fromJson(message, RedisCloudDelete.class);
             var c = getByName(delete.getServer().getName());
             if (removeServer(delete.getServer().getName())) {
                 c.ifPresent(this::onServerDelete); // call onServerDelete event
-                // System.out.println("--== Unregistered a new Server (" + delete.getServer().getName() + ") ==--");
             } else {
-                System.out.println("ServerRepository: Server " + delete.getServer().getName() + " not deleted idk whys");
+                logger.log("ServerRepository: Server " + delete.getServer().getName() + " not deleted idk whys");
             }
         } else if (channel.equals(CloudChannels.SERVER_ADD.getChannel())) {
             var add = Constants.get().getGson().fromJson(message, RedisCloudAdd.class);
             servers.get(add.getServer().getServerType()).add(add.getServer());
             this.onServerAdd(add.getServer()); // call onServerAdd event
-            // System.out.println("--== Registered a new Server (" + add.getServer().getName() + ") ==--");
         } else if (channel.equals(CloudChannels.SYNC.getChannel())) {
-            System.out.println("--== Sync Request Received ==--");
+            logger.log("--== Sync Request Received ==--");
             sync();
             this.onSync();
         }
@@ -167,15 +166,19 @@ public class ServerRepository extends RedisPubSubAdapter<String, String> {
     }
 
     public void onServerUpdate(@NonNull Server server) {
+        // this method can be re-implemented if you want to do something on server update
     }
 
     public void onServerDelete(@NonNull Server server) {
+        // this method can be re-implemented if you want to do something on server delete
     }
 
     public void onServerAdd(@NonNull Server server) {
+        // this method can be re-implemented if you want to do something on server add
     }
 
     public void onSync() {
+        // this method can be re-implemented if you want to do something on sync
     }
 
 

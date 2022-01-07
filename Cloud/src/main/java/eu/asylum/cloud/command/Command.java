@@ -23,7 +23,7 @@ public abstract class Command {
         return aliases;
     }
 
-    protected synchronized final HyLogger getLogger() {
+    protected final synchronized HyLogger getLogger() {
         return logger;
     }
 

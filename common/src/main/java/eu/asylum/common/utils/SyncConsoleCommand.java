@@ -21,8 +21,8 @@ public class SyncConsoleCommand {
     private void run() {
         try {
             String s;
-            String[] command = this.command.split(" ");
-            Process process = Runtime.getRuntime().exec(command);
+            String[] split = this.command.split(" ");
+            Process process = Runtime.getRuntime().exec(split);
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             StringBuilder buffer = new StringBuilder();
             while ((s = reader.readLine()) != null) {

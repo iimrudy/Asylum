@@ -11,6 +11,9 @@ import java.util.concurrent.CompletableFuture;
 
 public class UuidConverter {
 
+    UuidConverter() {
+    }
+
     @SneakyThrows
     public static CompletableFuture<MinecraftProfile> getUUID(@NonNull String username) {
         HttpRequest httpRequest = HttpRequest.newBuilder(new URI("https://api.mojang.com/users/profiles/minecraft/" + username)).GET().build();

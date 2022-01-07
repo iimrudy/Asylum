@@ -23,14 +23,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class AsylumProvider<T> {
 
     private final Map<T, AsylumPlayer<T>> asylumPlayerMap = new ConcurrentHashMap<>();
-    // private final List<String> fetchingUUIDS = Collections.synchronizedList(new ArrayList<String>());
     private final Map<String, TaskWaiter> uuidWaiterMap = new ConcurrentHashMap<>();
     @Getter
     private final ConfigurationContainer<?> configurationContainer;
 
     @Getter
     private final AsylumDB asylumDB;
-    private final Object _lock = new Object();
+    private final Object lock = new Object();
     private ServerRepository repository = null;
 
     public AsylumProvider(@NonNull ConfigurationContainer<?> configurationContainer) {
@@ -48,7 +47,7 @@ public abstract class AsylumProvider<T> {
      * @param t return an Optional<AsylumPlayer> given the t object
      **/
     public Optional<AsylumPlayer<T>> getAsylumPlayer(@NonNull T t) {
-        synchronized (_lock) {
+        synchronized (lock) {
             var ap = this.asylumPlayerMap.get(t);
             if (ap == null) { // fetch from the database, the player is not in the cache
 
@@ -56,7 +55,6 @@ public abstract class AsylumProvider<T> {
 
                 if (waiter == null) {
                     waiter = new TaskWaiter();
-                    // System.out.println("WAITER CREATED");
 
                     uuidWaiterMap.put(getUsername(t).toLowerCase(), waiter);
 
@@ -65,7 +63,7 @@ public abstract class AsylumProvider<T> {
 
                     if (d != null) { // check if a document already exist into the collection.
                         var tempAP = MongoSerializer.deserialize(d, AsylumPlayer.class); // temp AsylumPlayer<Object>
-                        ap = new AsylumPlayer<>(tempAP, t); // recreate with the generic.);
+                        ap = new AsylumPlayer<>(tempAP, t); // recreate with the generic.
                     } else { // document not present, creating it.
                         ap = new AsylumPlayer<>(this.getUUID(t), this.getUsername(t), t);
                         ap.setRank(Rank.DEFAULT);
@@ -77,12 +75,9 @@ public abstract class AsylumProvider<T> {
                     }
                     this.uuidWaiterMap.remove(getUsername(t).toLowerCase());
                     waiter.finish();
-                    // System.out.println("WAITER KILLED");
                     return Optional.of(ap);
                 }
-                // System.out.println("WAITER WAITING");
                 waiter.await(700L); // wait max 700ms
-                // System.out.println("WAITER FINISHED");
                 return Optional.ofNullable(this.asylumPlayerMap.get(t));
             }
             return Optional.of(ap);
@@ -109,8 +104,9 @@ public abstract class AsylumProvider<T> {
 
     /**
      * @param asylumPlayer Update AsylumPlayer data in the database Async
-     **/
-    public CompletableFuture<?> saveAsylumPlayerAsync(@NonNull AsylumPlayer<T> asylumPlayer) {
+     * @return
+     */
+    public CompletableFuture<Class<Void>> saveAsylumPlayerAsync(@NonNull AsylumPlayer<T> asylumPlayer) {
         return CompletableFuture.supplyAsync(() -> {
             saveAsylumPlayer(asylumPlayer);
             return Void.TYPE;
@@ -169,7 +165,7 @@ public abstract class AsylumProvider<T> {
     public void onQuit(@NonNull T t) {
         // save the data and quit
         this.getAsylumPlayer(t).ifPresent(this::saveAsylumPlayerAsync);
-        synchronized (_lock) {
+        synchronized (lock) {
             this.asylumPlayerMap.remove(t);
         }
     }

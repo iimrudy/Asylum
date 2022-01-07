@@ -12,12 +12,8 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import eu.asylum.common.AsylumProvider;
 import eu.asylum.common.cloud.ServerRepository;
-import eu.asylum.common.cloud.enums.QueueChannels;
-import eu.asylum.common.cloud.pubsub.queue.RedisQueueConnect;
-import eu.asylum.common.cloud.pubsub.queue.RedisQueueJoin;
 import eu.asylum.common.cloud.queue.QueueRepository;
 import eu.asylum.common.configuration.AsylumConfiguration;
-import eu.asylum.common.utils.Constants;
 import eu.asylum.proxy.configuration.TomlConfigurationContainer;
 import eu.asylum.proxy.handler.QueueLimboHandler;
 import eu.asylum.proxy.listener.ServerListener;
@@ -27,7 +23,6 @@ import net.elytrium.limboapi.api.Limbo;
 import net.elytrium.limboapi.api.LimboFactory;
 import net.elytrium.limboapi.api.chunk.Dimension;
 import net.elytrium.limboapi.api.chunk.VirtualWorld;
-import net.elytrium.limboapi.api.player.LimboPlayer;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -45,13 +40,13 @@ public class Proxy {
     private final Logger logger;
     private final Path dataDirectory;
     private final LimboFactory limboFactory;
+    private final Map<String, QueueLimboHandler> limboPlayers = new ConcurrentHashMap<>();
+    @Getter
+    private final Map<String, RegisteredServer> queuedJoin = new ConcurrentHashMap<>();
     private AsylumProvider<Player> asylumProvider;
     private ServerRepository serverRepostiory;
     private QueueRepository queueRepository;
     private Limbo queueServer;
-    private final Map<String, QueueLimboHandler> limboPlayers = new ConcurrentHashMap<>();
-    @Getter
-    private final Map<String, RegisteredServer> queuedJoin = new ConcurrentHashMap<>();
 
     @Inject
     public Proxy(ProxyServer server, Logger logger, @DataDirectory final Path folder) {

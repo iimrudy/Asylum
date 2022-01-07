@@ -67,7 +67,7 @@ public class FFALobbyGame extends LobbyGame {
                     public void run() {
                         if (event.getPlayer().isOnline()) {
                             var held = event.getPlayer().getInventory().getItemInMainHand();
-                            if (held != null && held.getItemMeta() != null && held.getItemMeta().displayName() instanceof TextComponent) {
+                            if (held.getItemMeta() != null && held.getItemMeta().displayName() instanceof TextComponent) {
                                 var component = (TextComponent) held.getItemMeta().displayName();
                                 if (component.content().equals("PVP Enabler") && !isPlayerPlaying(event.getPlayer())) {
                                     int seconds = (int) ((System.currentTimeMillis() - start) / 1000);
@@ -98,7 +98,7 @@ public class FFALobbyGame extends LobbyGame {
                     public void run() {
                         if (event.getPlayer().isOnline()) {
                             var held = event.getPlayer().getInventory().getItemInMainHand();
-                            if (held != null && held.getItemMeta() != null && held.getItemMeta().displayName() instanceof TextComponent) {
+                            if (held.getItemMeta() != null && held.getItemMeta().displayName() instanceof TextComponent) {
                                 var component = (TextComponent) held.getItemMeta().displayName();
                                 if (component.content().equals("PVP Disabler") && isPlayerPlaying(event.getPlayer())) {
                                     int seconds = (int) ((System.currentTimeMillis() - start) / 1000);
@@ -128,12 +128,10 @@ public class FFALobbyGame extends LobbyGame {
 
     @EventHandler
     public void onInvClick(InventoryClickEvent event) {
-        if (event.getWhoClicked() instanceof Player) {
-            if (isPlayerPlaying((Player) event.getWhoClicked())) {
-                event.setCancelled(true);
-                event.getWhoClicked().closeInventory(InventoryCloseEvent.Reason.CANT_USE);
-                ((Player) event.getWhoClicked()).updateInventory();
-            }
+        if (event.getWhoClicked() instanceof Player && isPlayerPlaying((Player) event.getWhoClicked())) {
+            event.setCancelled(true);
+            event.getWhoClicked().closeInventory(InventoryCloseEvent.Reason.CANT_USE);
+            ((Player) event.getWhoClicked()).updateInventory();
         }
     }
 

@@ -37,25 +37,6 @@ public class PlayerListener implements Listener {
         AsylumLobby.getInstance().getBuildingPlayers().remove(event.getPlayer());
     }
 
-    /*@EventHandler
-    public void onPlayerJump(final PlayerToggleFlightEvent e) {
-        final Player player = e.getPlayer();
-        if (player.getGameMode() == GameMode.CREATIVE) {
-            return;
-        }
-        if (AsylumLobby.getInstance().getGamesManager().isPlayerPlaying(player)) {
-            e.getPlayer().setFlying(false);
-            e.getPlayer().setAllowFlight(false);
-            return;
-        }
-        e.setCancelled(true);
-        player.setAllowFlight(false);
-        player.setFlying(false);
-        player.setVelocity(player.getLocation().getDirection().multiply(1.3).setY(1.3));
-        player.playSound(player.getLocation(), Sound.ENTITY_IRON_GOLEM_ATTACK, 10.0f, 5.0f);
-    }*/
-
-
     @EventHandler()
     public void onPlayerUse(final PlayerInteractEvent event) {
         Player p = event.getPlayer();
@@ -63,7 +44,6 @@ public class PlayerListener implements Listener {
         if (AsylumLobby.getInstance().getGamesManager().isPlayerPlaying(p) || AsylumLobby.getInstance().getBuildingPlayers().contains(p)) {
             return;
         }
-        if (p.getInventory().getItemInMainHand() == null) return;
 
         switch (p.getInventory().getItemInMainHand().getType()) {
             case COMPASS:
@@ -88,7 +68,6 @@ public class PlayerListener implements Listener {
         if (AsylumLobby.getInstance().getGamesManager().isPlayerPlaying(player) || AsylumLobby.getInstance().getBuildingPlayers().contains(player))
             return;
         if (event.getClickedInventory() == null) return;
-        if (event.getView().title() == null) return;
 
         if (event.getClickedInventory().getType() == InventoryType.CRAFTING || event.getClickedInventory().getType() == InventoryType.WORKBENCH || event.getClickedInventory().getType() == InventoryType.PLAYER) {
             event.setCancelled(true);
@@ -156,21 +135,18 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onPlayerInteract(final PlayerInteractEvent event) {
         Action action = event.getAction();
-        if (action == Action.RIGHT_CLICK_BLOCK) {
-            if (event.getClickedBlock().getType().toString().toLowerCase().contains("chest") || event.getClickedBlock().getType().toString().toLowerCase().contains("door")
-                    || event.getClickedBlock().getType().toString().toLowerCase().contains("fence")
-                    || event.getClickedBlock().getType().equals(Material.DISPENSER)
-                    || event.getClickedBlock().getType().equals(Material.DROPPER)
-                    || event.getClickedBlock().getType().equals(Material.HOPPER)
-                    || event.getClickedBlock().getType().equals(Material.BEACON)
-                    || event.getClickedBlock().getType().equals(Material.ANVIL)
-                    || event.getClickedBlock().getType().equals(Material.ENCHANTING_TABLE)
-                    || event.getClickedBlock().getType().equals(Material.CRAFTING_TABLE)) {
-                if (!AsylumLobby.getInstance().getBuildingPlayers().contains(event.getPlayer())) {
-                    event.setCancelled(true);
-                }
-            }
+        if (action == Action.RIGHT_CLICK_BLOCK && (event.getClickedBlock().getType().toString().toLowerCase().contains("chest") || event.getClickedBlock().getType().toString().toLowerCase().contains("door")
+                || event.getClickedBlock().getType().toString().toLowerCase().contains("fence")
+                || event.getClickedBlock().getType().equals(Material.DISPENSER)
+                || event.getClickedBlock().getType().equals(Material.DROPPER)
+                || event.getClickedBlock().getType().equals(Material.HOPPER)
+                || event.getClickedBlock().getType().equals(Material.BEACON)
+                || event.getClickedBlock().getType().equals(Material.ANVIL)
+                || event.getClickedBlock().getType().equals(Material.ENCHANTING_TABLE)
+                || event.getClickedBlock().getType().equals(Material.CRAFTING_TABLE)) && !AsylumLobby.getInstance().getBuildingPlayers().contains(event.getPlayer())) {
+            event.setCancelled(true);
         }
+
     }
 
     @EventHandler
@@ -183,19 +159,15 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public final void onBlockPlace(BlockPlaceEvent event) {
-        if (!AsylumLobby.getInstance().getGamesManager().isPlayerPlaying(event.getPlayer())) {
-            if (!AsylumLobby.getInstance().getBuildingPlayers().contains(event.getPlayer())) {
-                event.setCancelled(true);
-            }
+        if (!AsylumLobby.getInstance().getGamesManager().isPlayerPlaying(event.getPlayer()) && !AsylumLobby.getInstance().getBuildingPlayers().contains(event.getPlayer())) {
+            event.setCancelled(true);
         }
     }
 
     @EventHandler
     public final void onBlockBreak(BlockBreakEvent event) {
-        if (!AsylumLobby.getInstance().getGamesManager().isPlayerPlaying(event.getPlayer())) {
-            if (!AsylumLobby.getInstance().getBuildingPlayers().contains(event.getPlayer())) {
-                event.setCancelled(true);
-            }
+        if (!AsylumLobby.getInstance().getGamesManager().isPlayerPlaying(event.getPlayer()) && !AsylumLobby.getInstance().getBuildingPlayers().contains(event.getPlayer())) {
+            event.setCancelled(true);
         }
     }
 
@@ -226,10 +198,8 @@ public class PlayerListener implements Listener {
 
     @EventHandler //evita di mettere item dentro itemframe
     public void itemFrameCheck2(final PlayerInteractEntityEvent e) {
-        if (e.getRightClicked() instanceof ItemFrame) {
-            if (!AsylumLobby.getInstance().getBuildingPlayers().contains(e.getPlayer())) {
-                e.setCancelled(true);
-            }
+        if (e.getRightClicked() instanceof ItemFrame && !AsylumLobby.getInstance().getBuildingPlayers().contains(e.getPlayer())) {
+            e.setCancelled(true);
         }
     }
 

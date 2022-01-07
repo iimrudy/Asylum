@@ -23,6 +23,8 @@ import lombok.Synchronized;
 import org.apache.commons.io.FileUtils;
 import org.bson.Document;
 import org.hydev.logger.HyLogger;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
 import java.io.File;
 import java.io.FileReader;
@@ -32,6 +34,7 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static eu.asylum.common.cloud.ServerRepository.LAGGY_TPS;
@@ -46,23 +49,27 @@ public class Cloud {
     @Getter
     private final ServerRepository repository;
 
-    private final List<Server> notReachableServers = Collections.synchronizedList(new ArrayList<>());
-    private final List<Server> laggyServers = Collections.synchronizedList(new ArrayList<>());
+    private final List<Server> badServersList = Collections.synchronizedList(new ArrayList<>());
     private final List<String> occupiedNames = new CopyOnWriteArrayList<>();
     private final CommandHandler commandHandler;
     private final TaskWaiter logicWaiter = new TaskWaiter(true);
     private final QueueManager queueManager;
 
     public Cloud() throws Exception {
-        Cloud.singleton = this;
-
         // configuration handling
         File file = new File("./configuration.properties");
         if (!file.exists()) {
             file.createNewFile();
         }
         Properties prop = new Properties();
-        prop.load(new FileReader(file));
+        try {
+            FileReader fr = new FileReader(file);
+            prop.load(fr);
+            fr.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         this.configurationContainer = new PropertiesConfiguration(prop, file);
         AsylumConfiguration.setConfigurationContainer(this.configurationContainer);
 
@@ -70,24 +77,12 @@ public class Cloud {
         this.repository = new ServerRepository(AsylumConfiguration.REDIS_URI.getString(), AsylumConfiguration.MONGODB_URI.getString());
         this.commandHandler = new CommandHandler(this.asylumDB, "");
 
-        /*this.asylumDB.getPubSubConnectionReceiver().addListener(new RedisPubSubAdapter<>() {
-            @Override
-            public void message(String channel, String message) {
-                if (channel.equals(CloudChannels.SERVER_UPDATE.getChannel())) {
-                    // a server, send his own information, ram usage, online players, tps, etc
-                    var update = Constants.get().getGson().fromJson(message, RedisAsylumServerUpdate.class);
-                    //logger.log("Received update from " + update.toString());
-                } else if (channel.equals(CloudChannels.SERVER_DELETE.getChannel())) {
-                    var delete = Constants.get().getGson().fromJson(message, RedisAsylumServerDelete.class);
-                } else if (channel.equals(CloudChannels.SERVER_ADD.getChannel())) {
-                    var add = Constants.get().getGson().fromJson(message, RedisAsylumServerAdd.class);
-                }
-            }
-        });*/
+        for (Server srv : this.repository.getServers()) {
+            this.occupiedNames.add(srv.getName());
+        }
         this.queueManager = new QueueManager(this.repository);
         Constants.get().getExecutor().scheduleAtFixedRate(this::logic0, 5, 30L, TimeUnit.SECONDS);
         Constants.get().getExecutor().scheduleAtFixedRate(this::logic, 5, 120, java.util.concurrent.TimeUnit.SECONDS); // every 2 minutes
-        new eu.asylum.cloud.shell.CommandHandler().run(); // start the command handler once everything is loaded
     }
 
     private static int findFreePort() {
@@ -98,6 +93,7 @@ public class Cloud {
             socket.setReuseAddress(true);
             port = socket.getLocalPort();
         } catch (IOException ignored) {
+            // this exception is ignored.
         }
         if (port > 0) {
             return port;
@@ -106,16 +102,12 @@ public class Cloud {
     }
 
     // Thread-Safe singleton getter.
-    public static Cloud getInstance() {
+    public static synchronized Cloud getInstance() {
         if (singleton == null) {
-            synchronized (Cloud.class) {
-                if (singleton == null) {
-                    try {
-                        new Cloud();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
+            try {
+                singleton = new Cloud();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
         return singleton;
@@ -124,10 +116,7 @@ public class Cloud {
     private void logic0() {
         logicWaiter.await();
         logicWaiter.start();
-        var newServers = new HashMap<ServerType, Integer>();
-        for (var serverType : ServerType.values()) {
-            newServers.put(serverType, 0);
-        }
+        HashMap<ServerType, Integer> newServers = Arrays.stream(ServerType.values()).collect(Collectors.toMap(serverType -> serverType, serverType -> 0, (a, b) -> b, HashMap::new));
 
         // host servers if needed
         for (var type : ServerType.values()) {
@@ -135,18 +124,15 @@ public class Cloud {
                 int maxPlayers = type.getMaxPlayers();
                 int onlinePlayers = this.repository.getOnlinePlayers(type); // 200
                 int onlineServers = this.repository.getServers(type).size(); // 60
-                int necessary = (onlinePlayers / maxPlayers); // 200 / 60 = 3
-                if (onlineServers <= necessary) {
-                    int toHost = (onlineServers - necessary) + 2;
+                int necessary = (onlinePlayers / maxPlayers) + 2; // 200 / 60 = 3
+                if (necessary > onlineServers) {
+                    int toHost = (necessary - onlineServers);
+                    logger.log("Hosting " + toHost + " " + type.name() + " servers.");
                     newServers.put(type, newServers.get(type) + toHost);
                 }
             }
         }
-        for (var entry : newServers.entrySet()) {
-            IntStream.range(0, entry.getValue()).forEach(i -> {
-                hostServer(entry.getKey()).ifPresent(server -> logger.log("Hosting a new server (cause NEEDED) " + server.getName()));
-            });
-        }
+        multiHoster(newServers, "NEEDED");
         logicWaiter.finish();
     }
 
@@ -156,54 +142,46 @@ public class Cloud {
         logger.log("Starting logic");
         // host servers if needed
         // stop laggy servers - (don't stop in game servers)
-        var newServers = new HashMap<ServerType, Integer>();
+        HashMap<ServerType, Integer> newServers = Arrays.stream(ServerType.values()).collect(Collectors.toMap(serverType -> serverType, serverType -> 0, (a, b) -> b, HashMap::new));
         var toKill = new ArrayList<Server>();
-        for (var serverType : ServerType.values()) {
-            newServers.put(serverType, 0);
-        }
 
         for (var server : this.repository.getServers()) {
-            if (server.getPinger().ping()) { // is server pingable ?
-                this.notReachableServers.remove(server); // if was not reachable, remove it the server is now reachable
-                if (server.getServerStatus() != null) {
-                    if (server.getServerStatus().getTps() < LAGGY_TPS) {
-                        // this is a laggy server
-                        if (this.laggyServers.contains(server)) {
-                            if (server.getServerType().canClose(server)) { // can the server be closed ?
-                                logger.warning("Closing laggy server " + server.getName());
-                                toKill.add(server);
-                                // graciouslyKill(server);
-                                newServers.replace(server.getServerType(), newServers.get(server.getServerType()) + 1);
-                            }
-                        } else {
-                            this.laggyServers.add(server);
-                        }
-                    } else {
-                        this.laggyServers.remove(server); // remove cuz the server is not laggy anymore
+
+            var isBadServer0 = isLaggyOrUnReachable(server);
+            var isBadServer = isBadServer0.getT1() || isBadServer0.getT2();
+            var contains = this.badServersList.contains(server);
+            if (isBadServer) {
+                if (contains) {
+                    if (server.getServerType().canClose(server) && !isBadServer0.getT1()) { // the server is reachable but laggy
+                        logger.warning("Closing laggy server " + server.getName());
+                        toKill.add(server);
+                        newServers.replace(server.getServerType(), newServers.get(server.getServerType()) + 1);
                     }
+                } else {
+                    this.badServersList.add(server);
                 }
-            } else { // maybe is a dead server
-                if (this.notReachableServers.contains(server)) { // not reachable, maybe dead - going to kill it
-                    logger.warning("Server " + server.getName() + " is not reachable anymore, Killing it.");
-                    toKill.add(server);
-                    // graciouslyKill(server); // this is a dead server
-                    newServers.replace(server.getServerType(), newServers.get(server.getServerType()) + 1);
-                } else { // it's not dead, but it's not reachable
-                    this.notReachableServers.add(server);
-                }
+            } else if (contains) {
+                this.badServersList.remove(server);
             }
         }
 
-        for (var entry : newServers.entrySet()) {
-            IntStream.range(0, entry.getValue()).forEach(i -> {
-                hostServer(entry.getKey()).ifPresent(server -> logger.log("Hosting a new server (cause lag/unreachable) " + server.getName()));
-            });
-        }
+        multiHoster(newServers, "lag/not reachable");
+
         // severs are killed here - no interference between starting and killing a server.
         for (var server : toKill) {
             graciouslyKill(server);
         }
         logicWaiter.finish();
+    }
+
+    private Tuple2<Boolean, Boolean> isLaggyOrUnReachable(@NonNull Server server) {
+        return Tuples.of(!server.getPinger().ping(), server.getServerStatus().getTps() < LAGGY_TPS);
+    }
+
+    private void multiHoster(Map<ServerType, Integer> newServers, String cause) {
+        for (var entry : newServers.entrySet()) {
+            IntStream.range(0, entry.getValue()).forEach(i -> hostServer(entry.getKey()).ifPresent(server -> logger.log("Hosting a new server (" + cause + ") " + server.getName())));
+        }
     }
 
     private Optional<Server> hostServer0(Server server) {
@@ -223,9 +201,6 @@ public class Cloud {
     public Optional<Server> hostServer(ServerType type) {
         int port = findFreePort(); // get a port
         String name = getFirstFreeServerName(type); // get server name
-        Constants.get().getExecutor().schedule(() -> {
-            this.occupiedNames.remove(name); // remove the name from the list of occupied names
-        }, 60L, TimeUnit.SECONDS);
         File pathTo = new File("./servers/" + name); // init server path
         File templatePath = new File("./template/" + type.getZipFile()); // get template path
         if (pathTo.exists()) { // if the server-folder already exists
@@ -300,7 +275,7 @@ public class Cloud {
                 e.printStackTrace();
             }
         }
-        this.occupiedNames.remove(server.getName()); // remove the server name from the list of occupied names
+        Constants.get().getExecutor().schedule(() -> this.occupiedNames.remove(server.getName()), 30L, TimeUnit.SECONDS); //
     }
 
     private void announceServerKill(@NonNull Server server) {
@@ -308,8 +283,7 @@ public class Cloud {
         asylumDB.getMongoCollection("asylum", "cloud").findOneAndDelete(new Document().append("name", server.getName()));
         asylumDB.publishJson(CloudChannels.SERVER_DELETE.getChannel(), new RedisCloudDelete(server));
         // cleanup from the checks lists
-        this.notReachableServers.remove(server);
-        this.laggyServers.remove(server);
+        this.badServersList.remove(server);
     }
 
 

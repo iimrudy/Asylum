@@ -26,7 +26,6 @@ public class InfoCommand extends Command {
             if (s != null) {
                 builder.append("ServerName | Online Players | TPS | ramUsage | maxRam | MS TO PING");
                 for (Server server : Cloud.getInstance().getRepository().getServers(s)) {
-                    // server.getPinger().ping();
                     builder.append("\n").append(server.getName()).append(" | ").append(server.getServerStatus().getOnlinePlayers()).append(" | ").append(Math.round(server.getServerStatus().getTps()));
                     builder.append("tps | ").append(server.getServerStatus().getRamUsage()).append("mb | ").append(server.getServerType().getMaxRam());
                     var start = System.currentTimeMillis();
@@ -40,7 +39,6 @@ public class InfoCommand extends Command {
         }
         builder.append("\n\nTotal Server Count (").append(Cloud.getInstance().getRepository().getServerCount()).append(").");
         builder.append("\nTotal Players Online (").append(Cloud.getInstance().getRepository().getOnlinePlayers()).append(").");
-        // builder.append("\nLast update took " + ShockCloud.getInstance().getServerManager().getLastUpdate() + "ms.");
         getLogger().log(builder);
     }
 }

@@ -1,5 +1,6 @@
 package eu.asylum.common.configuration;
 
+import lombok.Cleanup;
 import lombok.NonNull;
 
 import java.io.File;
@@ -73,17 +74,23 @@ public class PropertiesConfiguration extends ConfigurationContainer<Properties> 
 
     @Override
     public void save(String path) throws IOException {
-        this.configuration.store(new FileWriter(path), null);
+        @Cleanup
+        var fw = new FileWriter(path);
+        this.configuration.store(fw, null);
     }
 
     @Override
     public void save(File path) throws IOException {
-        this.configuration.store(new FileWriter(path), null);
+        @Cleanup
+        var fw = new FileWriter(path);
+        this.configuration.store(fw, null);
     }
 
     @Override
     public void save() throws IOException {
-        this.configuration.store(new FileWriter(this.file), null);
+        @Cleanup
+        var fw = new FileWriter(this.file);
+        this.configuration.store(fw, null);
     }
 
     @Override

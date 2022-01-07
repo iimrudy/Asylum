@@ -34,6 +34,9 @@ public class Items {
         clock.setItemMeta(clockItemMeta);
     }
 
+    Items() {
+    }
+
     public static void formatInventory(Player p) {
         p.getInventory().clear();
         p.setHealth(20);

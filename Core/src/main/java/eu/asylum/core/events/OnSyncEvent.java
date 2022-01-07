@@ -13,7 +13,7 @@ public class OnSyncEvent extends Event {
 
     @Override
     public HandlerList getHandlers() {
-        return HANDLERS;
+        return getHandlerList();
     }
 
 }

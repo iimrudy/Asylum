@@ -7,15 +7,16 @@ import eu.asylum.common.cloud.pubsub.queue.RedisQueueConnect;
 import eu.asylum.common.cloud.queue.QueueRepository;
 import eu.asylum.common.cloud.servers.Server;
 import eu.asylum.common.utils.Constants;
-import eu.asylum.common.utils.TaskWaiter;
+import org.hydev.logger.HyLogger;
 
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import static eu.asylum.common.cloud.ServerRepository.LAGGY_TPS;
 
-public class QueueManager extends QueueRepository{
+public class QueueManager extends QueueRepository {
 
+    private final HyLogger logger = new HyLogger("QueueManager");
 
     public QueueManager(ServerRepository serverRepository) {
         super(serverRepository);
@@ -23,7 +24,7 @@ public class QueueManager extends QueueRepository{
     }
 
     private void logic() {
-        synchronized (this._lock) {
+        synchronized (this.lock) {
             for (var entry : this.queues.entrySet()) { // loop through all queues
                 var queue = entry.getValue();
                 var serverType = entry.getKey();
@@ -41,7 +42,7 @@ public class QueueManager extends QueueRepository{
                             this.leaveQueue(username, QueueLeftReason.CONNECTED);
                             this.getRepository().getAsylumDB().publishJson(QueueChannels.QUEUE_CONNECT.getChannel(), connectRequest);
                             onlineCounter++;
-                            System.out.println("Connected " + username + " to " + server.getName());
+                            logger.log("Connected " + username + " to " + server.getName());
                         }
                     }
                 }

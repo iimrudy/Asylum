@@ -38,7 +38,7 @@ public class CommandHandler {
             var commandObject = Constants.get().getGson().fromJson(data, commandContainer.command); // parsing the data into a object
             // the object is a subclass of AbstractCommand
             if (commandObject.isTarget(serverName)) { // is this server the target of the command ?
-                commandContainer.callback.run(); // if yes we can call execute the command's callback
+                commandContainer.callback.run(commandObject); // if yes we can call execute the command's callback
             }
         }
     }

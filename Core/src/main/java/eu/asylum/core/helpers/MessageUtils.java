@@ -1,6 +1,7 @@
 package eu.asylum.core.helpers;
 
 import lombok.NonNull;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
@@ -23,7 +24,7 @@ public class MessageUtils {
         message = ChatColor.translateAlternateColorCodes('&', message); // fix colors
         if (type == AlignmentType.CENTERED) {
             message = centerMessage(message);
-        } /*else if (type == AlignmentType.NORMAL) {}*/
+        }
         // send message
         for (Player p : players) {
             p.sendMessage(message);
@@ -41,7 +42,7 @@ public class MessageUtils {
         message = ChatColor.translateAlternateColorCodes('&', message); // fix colors
         if (type == AlignmentType.CENTERED) {
             message = centerMessage(message);
-        } /*else if (type == AlignmentType.NORMAL) { }*/
+        }
         // send message
         for (Player p : players) {
             p.sendMessage(message);
@@ -55,9 +56,9 @@ public class MessageUtils {
      * @param players to players
      **/
     public static void sendActionbar(@NonNull String message, Player... players) {
-        message = ChatColor.translateAlternateColorCodes('&', message);
+        message = ChatColor.translateAlternateColorCodes('&', message); // fix colors
         for (Player p : players) {
-            p.sendActionBar(message);
+            p.sendActionBar(MiniMessage.get().parse(message));
         }
     }
 

@@ -9,16 +9,19 @@ import java.io.DataOutputStream;
 
 public class Teleporter {
 
-    private static void sendPacketToProxy(String ...data) {
+    private static void sendPacketToProxy(String... data) {
         final ByteArrayOutputStream b = new ByteArrayOutputStream();
         final DataOutputStream out = new DataOutputStream(b);
         try {
             for (var d : data) {
                 out.writeUTF(d);
             }
-            Bukkit.getServer().sendPluginMessage(AsylumCore.getInstance(), "BungeeCord", b.toByteArray());
+            Bukkit.getOnlinePlayers().stream().findFirst().ifPresent(player -> {
+                player.sendPluginMessage(AsylumCore.getInstance(), "BungeeCord", b.toByteArray());
+            });
         } catch (Exception e) {
-            // just ignore the exception
+            e.printStackTrace();
+            AsylumCore.getInstance().getLogger().severe("Failed to send packet to proxy!");
         }
     }
 

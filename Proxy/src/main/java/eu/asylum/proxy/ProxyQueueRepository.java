@@ -12,16 +12,15 @@ public class ProxyQueueRepository extends QueueRepository {
 
     @Override
     public void onConnect(RedisQueueConnect queueConnect) {
-        System.out.println("ProxyQueueRepository.onConnect() " + queueConnect);
         var optionalServer = Proxy.get().getServer().getServer(queueConnect.getServerName());
         var optionalQueue = Proxy.get().getQueueLimboHandler(queueConnect.getPlayerName());
         var optionalPlayer = Proxy.get().getServer().getPlayer(queueConnect.getPlayerName());
-        if (optionalServer.isPresent()) {
-            if (optionalQueue.isPresent()) {
-                Proxy.get().getQueuedJoin().put(queueConnect.getPlayerName(), optionalServer.get());
+        if (optionalServer.isPresent()) { // if server exist
+            if (optionalQueue.isPresent()) { // if the player is in the limbo
+                Proxy.get().getQueuedJoin().put(queueConnect.getPlayerName(), optionalServer.get()); // limbo players are connected in a different way
                 optionalQueue.get().getPlayer().disconnect();
-            } else if (optionalPlayer.isPresent()) {
-                Proxy.get().getServer().getScheduler().buildTask(Proxy.get(),() -> {
+            } else if (optionalPlayer.isPresent()) { // else just send the player
+                Proxy.get().getServer().getScheduler().buildTask(Proxy.get(), () -> {
                     optionalPlayer.get().createConnectionRequest(optionalServer.get()).fireAndForget();
                 }).schedule();
             }

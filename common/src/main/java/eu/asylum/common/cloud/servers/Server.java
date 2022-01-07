@@ -6,14 +6,13 @@ import eu.asylum.common.cloud.pubsub.cloud.RedisCloudUpdate;
 import eu.asylum.common.mongoserializer.annotation.Exclude;
 import lombok.Data;
 
-import java.io.Serializable;
 import java.util.Objects;
 
 @Data
-public class Server implements Serializable {
+public class Server {
 
     @Exclude
-    private final Object _lock = new Object();
+    private final Object lock = new Object();
 
     @SerializedName("name")
     protected String name; // server name
@@ -35,7 +34,7 @@ public class Server implements Serializable {
 
 
     public Pinger getPinger() {
-        synchronized (_lock) {
+        synchronized (lock) {
             if (this.pinger == null) {
                 this.pinger = new Pinger(this.ip, this.port);
             }

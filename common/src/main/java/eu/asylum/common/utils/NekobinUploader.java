@@ -13,6 +13,8 @@ public class NekobinUploader {
 
     private static URI uri = null;
 
+    NekobinUploader() {
+    }
 
     @SneakyThrows
     public static CompletableFuture<NekobinResult> upload(@NonNull String content) {

@@ -15,7 +15,8 @@ public class Main {
         server.setServerType(ServerType.LOBBY);
         System.out.println(Constants.get().getGson().toJson(server));
         System.out.println(Constants.get().getGson().toJson(new RedisCloudAdd()));
-        new Cloud();
+        Cloud.getInstance();
+        new eu.asylum.cloud.shell.CommandHandler().run(); // start the command handler once everything is loaded
     }
 
 }

@@ -124,7 +124,8 @@ public class AsylumScoreBoard {
      **/
     private class ScoreboardRow {
 
-        private String prefix, suffix;
+        private String prefix;
+        private String suffix;
 
         public ScoreboardRow(String row) {
             row = ChatColor.translateAlternateColorCodes('&', row);
@@ -172,7 +173,7 @@ public class AsylumScoreBoard {
                 }
             }
 
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
 
             if (activeColor != null)
                 sb.append(activeColor);

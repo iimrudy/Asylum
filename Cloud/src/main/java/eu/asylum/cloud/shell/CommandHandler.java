@@ -64,7 +64,6 @@ public class CommandHandler implements Runnable {
         commandList.add(new ExitCommand());
         commandList.add(new PingCommand());
         commandList.add(new RequestSyncCommand());
-        //super.setName("Command-Handler");
         logger.log("Command Handler started.");
     }
 
@@ -75,29 +74,33 @@ public class CommandHandler implements Runnable {
             String line;
             try {
                 line = lineReader.readLine(prompt);
-                if (!line.isEmpty()) {
-                    try {
-                        String[] splitted = line.split("\\s+");
-                        if (!splitted[0].startsWith("#")) {
-                            boolean executed = false;
-                            for (Command c : commandList) {
-                                if (c.getCommandName().equalsIgnoreCase(splitted[0])) {
-                                    c.onCommand(split(splitted));
-                                    executed = true;
-                                    break; // Break the loop if the command was executed.
-                                }
-                            }
-                            if (!executed) {
-                                logger.log("Command not found, type 'help' for command list.");
-                            }
+                processCommand(line);
+            } catch (Exception e) { // exception caused by lineReader - should panic this time
+                logger.log("Bye!");
+                break;
+            }
+        }
+    }
+
+    private void processCommand(String line) {
+        if (!line.isEmpty()) {
+            try {
+                String[] split = line.split("\\s+");
+                if (!split[0].startsWith("#")) {
+                    boolean executed = false;
+                    for (Command c : commandList) {
+                        if (c.getCommandName().equalsIgnoreCase(split[0])) {
+                            c.onCommand(split(split));
+                            executed = true;
+                            break; // Break the loop if the command was executed.
                         }
-                    } catch (Exception e) { // safe executor - avoid strange crashes from the commands
-                        e.printStackTrace();
+                    }
+                    if (!executed) {
+                        logger.log("Command not found, type 'help' for command list.");
                     }
                 }
-            } catch (Exception e) { // exception caused by lineReader - should panic this time
-                System.out.println("\nBye.");
-                break;
+            } catch (Exception e) { // safe executor - avoid strange crashes from the commands
+                e.printStackTrace();
             }
         }
     }

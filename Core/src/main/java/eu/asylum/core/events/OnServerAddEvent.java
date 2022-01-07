@@ -22,7 +22,7 @@ public class OnServerAddEvent extends Event {
 
     @Override
     public HandlerList getHandlers() {
-        return HANDLERS;
+        return getHandlerList();
     }
 
 }

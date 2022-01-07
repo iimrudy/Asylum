@@ -9,6 +9,9 @@ import java.util.zip.ZipInputStream;
 
 public class ZipUtils {
 
+    ZipUtils() {
+    }
+
     public static boolean unzip(File directoryTo, File zip) throws IOException {
         if (!zip.exists()) {
             System.out.println("ZIP FILE DOES NOT EXIST " + zip.getAbsoluteFile());

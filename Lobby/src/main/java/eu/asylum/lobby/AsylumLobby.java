@@ -3,7 +3,6 @@ package eu.asylum.lobby;
 import co.aikar.commands.BukkitCommandManager;
 import eu.asylum.common.cloud.enums.ServerType;
 import eu.asylum.core.configuration.YamlConfigurationContainer;
-import eu.asylum.core.gui.GuiListener;
 import eu.asylum.core.gui.ServerGui;
 import eu.asylum.core.helpers.AsylumScoreBoard;
 import eu.asylum.lobby.commands.staff.BuildCommand;
@@ -15,7 +14,6 @@ import eu.asylum.lobby.listener.PlayerListener;
 import kr.entree.spigradle.annotations.SpigotPlugin;
 import lombok.Getter;
 import me.clip.placeholderapi.PlaceholderAPI;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -90,9 +88,9 @@ public class AsylumLobby extends JavaPlugin {
                 getDataFolder().mkdirs();
                 path.createNewFile();
             }
-            YamlConfiguration configuration = new YamlConfiguration();
-            configuration.load(path);
-            this.configuration = new YamlConfigurationContainer(configuration, path);
+            YamlConfiguration yamlConfiguration = new YamlConfiguration();
+            yamlConfiguration.load(path);
+            this.configuration = new YamlConfigurationContainer(yamlConfiguration, path);
         } catch (Exception e) {
             throw new RuntimeException(e); // re throw exception so the plugin will be disabled
         }

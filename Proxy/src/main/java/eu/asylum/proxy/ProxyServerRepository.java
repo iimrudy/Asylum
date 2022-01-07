@@ -22,21 +22,17 @@ public class ProxyServerRepository extends ServerRepository {
 
     @Override
     public void onServerAdd(@NonNull Server server) {
-        if (!proxyServerMap.containsKey(server)) {
+
+        proxyServerMap.computeIfAbsent(server, s -> {
             var info = new ServerInfo(server.getName(), new InetSocketAddress(server.getIp(), server.getPort()));
-            RegisteredServer rs = Proxy.get().getServer().registerServer(info);
-            proxyServerMap.put(server, rs);
-        }
+            return Proxy.get().getServer().registerServer(info);
+        });
     }
 
     @Override
     public void onServerDelete(@NonNull Server server) {
-        System.out.println( server.getName() + " REMOVED -- > " + proxyServerMap.remove(server));
+        proxyServerMap.remove(server);
         Proxy.get().getServer().unregisterServer(new ServerInfo(server.getName(), new InetSocketAddress(server.getIp(), server.getPort())));
-    }
-
-    @Override
-    public void onServerUpdate(@NonNull Server server) {
     }
 
     @Override
@@ -54,12 +50,11 @@ public class ProxyServerRepository extends ServerRepository {
 
         // register new servers
         for (Server server : servers) {
-            if (!this.proxyServerMap.containsKey(server)) {
+            proxyServerMap.computeIfAbsent(server, s -> {
                 var info = new ServerInfo(server.getName(), new InetSocketAddress(server.getIp(), server.getPort()));
-                RegisteredServer rs = Proxy.get().getServer().registerServer(info);
-                proxyServerMap.put(server, rs);
                 Proxy.get().getLogger().info("Registering a new server #-> " + server.getName() + "\t|" + this.proxyServerMap.size());
-            }
+                return Proxy.get().getServer().registerServer(info);
+            });
         }
 
 

@@ -1,7 +1,6 @@
 package eu.asylum.common.cloud.queue;
 
 import eu.asylum.common.cloud.ServerRepository;
-import eu.asylum.common.cloud.enums.CloudChannels;
 import eu.asylum.common.cloud.enums.QueueChannels;
 import eu.asylum.common.cloud.enums.QueueLeftReason;
 import eu.asylum.common.cloud.enums.ServerType;
@@ -25,7 +24,7 @@ public class QueueRepository extends RedisPubSubAdapter<String, String> {
     protected final ServerRepository repository;
     @Getter
     protected Map<ServerType, Queue<String>> queues = new ConcurrentHashMap<>();
-    protected Object _lock = new Object();
+    protected Object lock = new Object();
 
     public QueueRepository(ServerRepository repository) {
         this.repository = repository;
@@ -43,12 +42,10 @@ public class QueueRepository extends RedisPubSubAdapter<String, String> {
     public void message(String channel, String message) {
         if (channel.equals(QueueChannels.PLAYER_QUEUE_JOIN.getChannel())) {
             var queueJoin = Constants.get().getGson().fromJson(message, RedisQueueJoin.class);
-            _addPlayerToQueue(queueJoin.getPlayerName(), queueJoin.getServerType());
-            //System.out.println("Player " + queueJoin.getPlayerName() + " joined queue " + queueJoin.getServerType());
+            addPlayerToQueue(queueJoin.getPlayerName(), queueJoin.getServerType());
         } else if (channel.equals(QueueChannels.PLAYER_QUEUE_LEAVE.getChannel())) {
             var queueJoin = Constants.get().getGson().fromJson(message, RedisQueueLeft.class);
-            _removePlayerFromQueues(queueJoin.getPlayerName());
-            //System.out.println("Player " + queueJoin.getPlayerName() + " left queue " + queueJoin);
+            removePlayerFromQueues(queueJoin.getPlayerName());
         } else if (channel.equals(QueueChannels.QUEUE_CONNECT.getChannel())) {
             var queueConnect = Constants.get().getGson().fromJson(message, RedisQueueConnect.class);
             this.onConnect(queueConnect);
@@ -56,16 +53,17 @@ public class QueueRepository extends RedisPubSubAdapter<String, String> {
     }
 
     public void onConnect(RedisQueueConnect queueConnect) {
+        // this method can be overridden by subclasses that need to do something on queue connect
     }
 
     // method called only by redis pubsub handler
-    protected void _addPlayerToQueue(String playerName, ServerType serverType) {
-        _removePlayerFromQueues(playerName); // replace queue if player is already in queue
+    protected void addPlayerToQueue(String playerName, ServerType serverType) {
+        removePlayerFromQueues(playerName); // replace queue if player is already in queue
         queues.get(serverType).add(playerName);
     }
 
     // method called only by redis pubsub handler
-    protected void _removePlayerFromQueues(String playerName) {
+    protected void removePlayerFromQueues(String playerName) {
         for (ServerType serverType : ServerType.values()) {
             queues.get(serverType).remove(playerName);
         }
@@ -90,7 +88,7 @@ public class QueueRepository extends RedisPubSubAdapter<String, String> {
     }
 
     public Optional<ServerType> getPlayerQueue(String username) {
-        synchronized (_lock) {
+        synchronized (lock) {
             for (var entry : queues.entrySet()) {
                 if (entry.getValue().contains(username)) {
                     return Optional.ofNullable(entry.getKey());

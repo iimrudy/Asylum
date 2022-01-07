@@ -110,7 +110,7 @@ public class ServerGui extends AbstractGui {
     }
 
     @EventHandler
-    public void OnSync(OnSyncEvent event) {
+    public void onSync(OnSyncEvent event) {
         this.rebuildUI();
     }
 

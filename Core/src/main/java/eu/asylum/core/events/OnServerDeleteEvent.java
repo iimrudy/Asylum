@@ -22,7 +22,7 @@ public class OnServerDeleteEvent extends Event {
 
     @Override
     public HandlerList getHandlers() {
-        return HANDLERS;
+        return getHandlerList();
     }
 
 }
