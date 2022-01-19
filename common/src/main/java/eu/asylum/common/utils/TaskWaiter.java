@@ -1,5 +1,7 @@
 package eu.asylum.common.utils;
 
+import lombok.Synchronized;
+
 // easy TaskWaiter, start a task and wait for it to finish
 // you can give it a maximum time to wait in case of timeout an exception is thrown
 public class TaskWaiter {
@@ -17,11 +19,13 @@ public class TaskWaiter {
     }
 
     // start the task
+    @Synchronized
     public final void start() {
         this.finished = false;
     }
 
     // finish the task
+    @Synchronized
     public final void finish() {
         this.finished = true;
     }

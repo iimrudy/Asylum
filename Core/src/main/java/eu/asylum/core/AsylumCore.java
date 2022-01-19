@@ -1,6 +1,7 @@
 package eu.asylum.core;
 
 import co.aikar.commands.BukkitCommandManager;
+import com.google.protobuf.Duration;
 import eu.asylum.common.AsylumProvider;
 import eu.asylum.common.cloud.enums.CloudChannels;
 import eu.asylum.common.cloud.pubsub.cloud.RedisCloudShutdown;
@@ -85,7 +86,6 @@ public class AsylumCore extends JavaPlugin {
             }
         }, 0, 20L); // send update every minute
 
-        this.getServer().getScheduler().runTaskTimer(this, new TpsCalculator(), 0, 1);
         this.getAsylumProvider().getAsylumDB().getPubSubConnectionReceiver().sync().subscribe(CloudChannels.SERVER_SHUTDOWN.getChannel());
         this.getAsylumProvider().getAsylumDB().getPubSubConnectionReceiver().addListener(new RedisPubSubAdapter<>() {
             @Override
@@ -100,7 +100,7 @@ public class AsylumCore extends JavaPlugin {
                     } else if (channel.equalsIgnoreCase(CloudChannels.SYNC.getChannel())) {
                         Bukkit.getScheduler().runTaskLater(AsylumCore.this, () -> {
                             sendUpdate(true);
-                        }, 45L);
+                        }, 20L * 5L);
                     }
                 });
             }
@@ -132,8 +132,15 @@ public class AsylumCore extends JavaPlugin {
             REDIS_CLOUD_SERVER_UPDATE.setTps(tps);
             REDIS_CLOUD_SERVER_UPDATE.setRamUsage(usedMemory);
             REDIS_CLOUD_SERVER_UPDATE.setMotd(getMotd());
-            // asylumProvider.getRepository().getAsylumDB().redisSetJsonAsync(serverName, REDIS_CLOUD_SERVER_UPDATE); // manual update, TO-DO
+
+            // TODO: depcrecate pubusb update messages
             asylumProvider.getAsylumDB().publishJson(CloudChannels.SERVER_UPDATE.getChannel(), REDIS_CLOUD_SERVER_UPDATE);
+            // TODO: manual updates
+            asylumProvider.getRepository().getAsylumDB().getRedisConnection().async().set(serverName0, Constants.get().getGson().toJson(REDIS_CLOUD_SERVER_UPDATE)).thenAccept(aVoid -> {
+                if (aVoid != null) { // expiration is configured once the key has been successfully inserted
+                    asylumProvider.getRepository().getAsylumDB().getRedisConnection().async().expire(serverName0, 7L); // 7 seconds in case of delayed update
+                }
+            });
         });
     }
 

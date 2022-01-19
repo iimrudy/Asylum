@@ -94,11 +94,9 @@ public class ServerRepository extends RedisPubSubAdapter<String, String> {
     }
 
     public final Optional<Server> getByName(@NonNull String serverName) {
-        for (var s : servers.entrySet()) {
-            for (var server : s.getValue()) {
-                if (server.getName().equals(serverName)) {
-                    return Optional.of(server);
-                }
+        for (var server : getServers()) {
+            if (server.getName().equalsIgnoreCase(serverName)) {
+                return Optional.of(server);
             }
         }
         return Optional.empty();

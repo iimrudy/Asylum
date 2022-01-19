@@ -69,4 +69,8 @@ public enum ServerType {
         return ServerJoinable.DEFAULT.isJoinable(server) && this.joinable.isJoinable(server);
     }
 
+    public String getQueueName() {
+        return String.format("queue_%s", this.name().toLowerCase());
+    }
+
 }

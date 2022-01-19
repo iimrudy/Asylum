@@ -30,9 +30,13 @@ subprojects {
 
     tasks.generateSpigotDescription.enabled = false
 
-    jar {
-
+    compileJava {
+        sourceCompatibility = JavaVersion.VERSION_16
+        targetCompatibility = JavaVersion.VERSION_16
+        options.compilerArgs << '-nowarn'
+        // options.compilerArgs << '-Xlint:unchecked'
     }
+
     repositories {
         maven { url = "https://repo.aikar.co/content/groups/aikar/" }
         maven { url = uri("https://papermc.io/repo/repository/maven-public/") }

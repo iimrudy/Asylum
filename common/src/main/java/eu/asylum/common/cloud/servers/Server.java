@@ -4,11 +4,17 @@ import com.google.gson.annotations.SerializedName;
 import eu.asylum.common.cloud.enums.ServerType;
 import eu.asylum.common.cloud.pubsub.cloud.RedisCloudUpdate;
 import eu.asylum.common.mongoserializer.annotation.Exclude;
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.Objects;
 
-@Data
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class Server {
 
     @Exclude
@@ -46,6 +52,7 @@ public class Server {
         }
     }
 
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -54,8 +61,4 @@ public class Server {
         return getPort() == server.getPort() && Objects.equals(getName(), server.getName()) && Objects.equals(getIp(), server.getIp()) && getServerType() == server.getServerType();
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(getName(), getIp(), getPort(), getServerType());
-    }
 }

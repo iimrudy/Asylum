@@ -72,11 +72,9 @@ public class ServerGui extends AbstractGui {
     public ItemStack craftItem(Server server) {
         var mat = (server.getServerStatus().getOnlinePlayers() >= server.getServerType().getMaxPlayers() / 2 ? Material.ORANGE_TERRACOTTA : Material.GREEN_TERRACOTTA);
         ItemStack itemStack = new ItemStack(mat, 1);
-
         ItemMeta meta = itemStack.getItemMeta();
 
         var dn = LegacyComponentSerializer.legacySection().deserialize(ChatColor.YELLOW + StringUtils.capitalize(server.getName().toLowerCase(Locale.ROOT)));
-
         var empty = LegacyComponentSerializer.legacySection().deserialize("");
 
         meta.displayName(dn);

@@ -31,7 +31,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -50,7 +49,7 @@ public class Cloud {
     private final ServerRepository repository;
 
     private final List<Server> badServersList = Collections.synchronizedList(new ArrayList<>());
-    private final List<String> occupiedNames = new CopyOnWriteArrayList<>();
+    private final List<String> occupiedNames = Collections.synchronizedList(new ArrayList<>());
     private final CommandHandler commandHandler;
     private final TaskWaiter logicWaiter = new TaskWaiter(true);
     private final QueueManager queueManager;
@@ -61,6 +60,7 @@ public class Cloud {
         if (!file.exists()) {
             file.createNewFile();
         }
+
         Properties prop = new Properties();
         try {
             FileReader fr = new FileReader(file);
@@ -78,6 +78,7 @@ public class Cloud {
         this.commandHandler = new CommandHandler(this.asylumDB, "");
 
         for (Server srv : this.repository.getServers()) {
+            logger.log("ADDED " + srv.getName());
             this.occupiedNames.add(srv.getName());
         }
         this.queueManager = new QueueManager(this.repository);
@@ -145,15 +146,17 @@ public class Cloud {
         HashMap<ServerType, Integer> newServers = Arrays.stream(ServerType.values()).collect(Collectors.toMap(serverType -> serverType, serverType -> 0, (a, b) -> b, HashMap::new));
         var toKill = new ArrayList<Server>();
 
-        for (var server : this.repository.getServers()) {
-
-            var isBadServer0 = isLaggyOrUnReachable(server);
-            var isBadServer = isBadServer0.getT1() || isBadServer0.getT2();
+        this.repository.getServers().forEach(server -> {
+            var isBadServer0 = isUnreachableOrLaggy(server);
             var contains = this.badServersList.contains(server);
-            if (isBadServer) {
+            if (isBadServer0.getT1() || isBadServer0.getT2()) {
                 if (contains) {
                     if (server.getServerType().canClose(server) && !isBadServer0.getT1()) { // the server is reachable but laggy
                         logger.warning("Closing laggy server " + server.getName());
+                        toKill.add(server);
+                        newServers.replace(server.getServerType(), newServers.get(server.getServerType()) + 1);
+                    } else if (isBadServer0.getT1()) { // is unreachable
+                        logger.warning("Closing unreachable server " + server.getName());
                         toKill.add(server);
                         newServers.replace(server.getServerType(), newServers.get(server.getServerType()) + 1);
                     }
@@ -163,7 +166,7 @@ public class Cloud {
             } else if (contains) {
                 this.badServersList.remove(server);
             }
-        }
+        });
 
         multiHoster(newServers, "lag/not reachable");
 
@@ -174,7 +177,7 @@ public class Cloud {
         logicWaiter.finish();
     }
 
-    private Tuple2<Boolean, Boolean> isLaggyOrUnReachable(@NonNull Server server) {
+    private Tuple2<Boolean, Boolean> isUnreachableOrLaggy(@NonNull Server server) {
         return Tuples.of(!server.getPinger().ping(), server.getServerStatus().getTps() < LAGGY_TPS);
     }
 
@@ -194,13 +197,14 @@ public class Cloud {
         }, exc -> logger.error("Error while starting the server --> " + exc.getMessage()) /* wtf error while starting the server - problem occurred while executing the command*/
         );
         if (success.get()) return Optional.of(server);
+        this.occupiedNames.remove(server.getName()); // hosting failed - remove the name from the occupied names
         return Optional.empty();
     }
-
 
     public Optional<Server> hostServer(ServerType type) {
         int port = findFreePort(); // get a port
         String name = getFirstFreeServerName(type); // get server name
+        this.occupiedNames.add(name); // add the name to the list of occupied names
         File pathTo = new File("./servers/" + name); // init server path
         File templatePath = new File("./template/" + type.getZipFile()); // get template path
         if (pathTo.exists()) { // if the server-folder already exists
@@ -210,7 +214,7 @@ public class Cloud {
                 try {
                     FileUtils.deleteDirectory(pathTo);
                 } catch (IOException e) {
-                    // ignored - it's not that much a problem if folder is not deleted
+                    // ignored - it's not a big deal if the folder is not deleted
                 }
             }
         }
@@ -222,6 +226,7 @@ public class Cloud {
             e.printStackTrace();
         }
         logger.error("Failed to host server, cant' work with folders");
+        this.occupiedNames.remove(name);
         return Optional.empty();
     }
 
@@ -290,7 +295,7 @@ public class Cloud {
     public final String getFirstFreeServerName(ServerType type) {
         int i = 0;
         String name = type.name() + "-" + i;
-        while (repository.getByName(name).isPresent() && !this.occupiedNames.contains(name)) {
+        while (repository.getByName(name).isPresent() || this.occupiedNames.contains(name)) {
             name = type.name() + "-" + (++i);
         }
         return name;
