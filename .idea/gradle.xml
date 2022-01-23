@@ -15,6 +15,7 @@
             <option value="$PROJECT_DIR$/Cloud" />
             <option value="$PROJECT_DIR$/Core" />
             <option value="$PROJECT_DIR$/Lobby" />
+            <option value="$PROJECT_DIR$/Proxy" />
             <option value="$PROJECT_DIR$/common" />
           </set>
         </option>

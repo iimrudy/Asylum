@@ -1,6 +1,7 @@
 package eu.asylum.common;
 
 import com.mongodb.client.model.Filters;
+import eu.asylum.common.cloud.ServerRepository;
 import eu.asylum.common.configuration.AsylumConfiguration;
 import eu.asylum.common.configuration.ConfigurationContainer;
 import eu.asylum.common.data.AsylumPlayer;
@@ -9,8 +10,10 @@ import eu.asylum.common.database.AsylumDB;
 import eu.asylum.common.mongoserializer.MongoSerializer;
 import eu.asylum.common.utils.Constants;
 import eu.asylum.common.utils.TaskWaiter;
+import io.lettuce.core.RedisURI;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Synchronized;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import java.util.*;
@@ -20,20 +23,21 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class AsylumProvider<T> {
 
     private final Map<T, AsylumPlayer<T>> asylumPlayerMap = new ConcurrentHashMap<>();
-    // private final List<String> fetchingUUIDS = Collections.synchronizedList(new ArrayList<String>());
-    private final Map<String, TaskWaiter> uuidLatchMap = new ConcurrentHashMap<>();
+    private final Map<String, TaskWaiter> uuidWaiterMap = new ConcurrentHashMap<>();
     @Getter
     private final ConfigurationContainer<?> configurationContainer;
 
     @Getter
     private final AsylumDB asylumDB;
-
-    private final Object _lock = new Object();
+    private final Object lock = new Object();
+    private ServerRepository repository = null;
 
     public AsylumProvider(@NonNull ConfigurationContainer<?> configurationContainer) {
         this.configurationContainer = configurationContainer;
         AsylumConfiguration.setConfigurationContainer(this.configurationContainer);
-        this.asylumDB = new AsylumDB(AsylumConfiguration.REDIS_URI.getString(), AsylumConfiguration.MONGODB_URI.getString());
+        RedisURI redisURI = RedisURI.create(AsylumConfiguration.REDIS_URI.getString());
+        redisURI.setDatabase(0);
+        this.asylumDB = new AsylumDB(redisURI, AsylumConfiguration.MONGODB_URI.getString());
         getOnlinePlayers().forEach(this::getAsylumPlayerAsync);
     }
 
@@ -42,44 +46,38 @@ public abstract class AsylumProvider<T> {
      *
      * @param t return an Optional<AsylumPlayer> given the t object
      **/
-
     public Optional<AsylumPlayer<T>> getAsylumPlayer(@NonNull T t) {
-        synchronized (_lock) {
+        synchronized (lock) {
             var ap = this.asylumPlayerMap.get(t);
             if (ap == null) { // fetch from the database, the player is not in the cache
 
-                TaskWaiter waiter = uuidLatchMap.get(getUsername(t).toLowerCase());
+                TaskWaiter waiter = uuidWaiterMap.get(getUsername(t).toLowerCase());
 
                 if (waiter == null) {
                     waiter = new TaskWaiter();
-                    // System.out.println("WAITER CREATED");
 
-                    uuidLatchMap.put(getUsername(t).toLowerCase(), waiter);
+                    uuidWaiterMap.put(getUsername(t).toLowerCase(), waiter);
 
                     var collection = this.asylumDB.getMongoCollection("asylum", "users");
                     var d = collection.find(Filters.eq("_id", getUUID(t).toString())).first();
 
                     if (d != null) { // check if a document already exist into the collection.
                         var tempAP = MongoSerializer.deserialize(d, AsylumPlayer.class); // temp AsylumPlayer<Object>
-                        ap = new AsylumPlayer<>(tempAP, t); // recreate with the generic.);
+                        ap = new AsylumPlayer<>(tempAP, t); // recreate with the generic.
                     } else { // document not present, creating it.
                         ap = new AsylumPlayer<>(this.getUUID(t), this.getUsername(t), t);
                         ap.setRank(Rank.DEFAULT);
                         collection.insertOne(MongoSerializer.serialize(ap)); // insert into db
                     }
 
-
                     if (isOnline(t)) { // fix zombie object caused by player that join and leave fast
                         this.asylumPlayerMap.put(t, ap);
                     }
-                    this.uuidLatchMap.remove(getUsername(t).toLowerCase());
+                    this.uuidWaiterMap.remove(getUsername(t).toLowerCase());
                     waiter.finish();
-                    // System.out.println("WAITER KILLED");
                     return Optional.of(ap);
                 }
-                // System.out.println("WAITER WAITING");
                 waiter.await(700L); // wait max 700ms
-                // System.out.println("WAITER FINISHED");
                 return Optional.ofNullable(this.asylumPlayerMap.get(t));
             }
             return Optional.of(ap);
@@ -106,8 +104,9 @@ public abstract class AsylumProvider<T> {
 
     /**
      * @param asylumPlayer Update AsylumPlayer data in the database Async
-     **/
-    public CompletableFuture<?> saveAsylumPlayerAsync(@NonNull AsylumPlayer<T> asylumPlayer) {
+     * @return
+     */
+    public CompletableFuture<Class<Void>> saveAsylumPlayerAsync(@NonNull AsylumPlayer<T> asylumPlayer) {
         return CompletableFuture.supplyAsync(() -> {
             saveAsylumPlayer(asylumPlayer);
             return Void.TYPE;
@@ -160,17 +159,13 @@ public abstract class AsylumProvider<T> {
 
     public void onJoin(@NonNull T t) {
         // setup player data
-        long time = System.currentTimeMillis();
-        this.getAsylumPlayerAsync(t).thenAccept(optionalAsylumPlayer -> {
-            long end = System.currentTimeMillis();
-            System.out.println("Time to fetch player: " + (end - time) + optionalAsylumPlayer.get());
-        });
+        this.getAsylumPlayerAsync(t);
     }
 
     public void onQuit(@NonNull T t) {
         // save the data and quit
         this.getAsylumPlayer(t).ifPresent(this::saveAsylumPlayerAsync);
-        synchronized (_lock) {
+        synchronized (lock) {
             this.asylumPlayerMap.remove(t);
         }
     }
@@ -180,12 +175,18 @@ public abstract class AsylumProvider<T> {
         Constants.get().shutdown();
     }
 
-    public int getSize() {
-        synchronized (_lock) {
-            return this.asylumPlayerMap.size();
-        }
+    @NonNull
+    public ServerRepository serverRepositoryBuilder() {
+        return new ServerRepository(AsylumConfiguration.REDIS_URI.getString(), AsylumConfiguration.MONGODB_URI.getString());
     }
 
+    @Synchronized
+    public ServerRepository getRepository() {
+        if (repository == null) { // lazy init, initialized ony if needed
+            this.repository = serverRepositoryBuilder();
+        }
+        return repository;
+    }
 
     // Abstract Methods
 

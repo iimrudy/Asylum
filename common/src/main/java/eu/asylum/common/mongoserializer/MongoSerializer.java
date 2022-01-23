@@ -4,6 +4,8 @@ import eu.asylum.common.utils.Constants;
 import org.bson.Document;
 
 public class MongoSerializer {
+    MongoSerializer() {
+    }
 
     public static Document serialize(Object object) {
         return Document.parse(Constants.get().getGson().toJson(object));

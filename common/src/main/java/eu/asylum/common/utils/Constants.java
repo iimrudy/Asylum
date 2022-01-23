@@ -15,6 +15,9 @@ import java.util.concurrent.ScheduledExecutorService;
 public class Constants {
 
     private static final Constants constants = new Constants();
+
+    public final int REDIS_DB_CLOUD = 1;
+
     @Getter
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(30);
     @Getter
@@ -45,6 +48,5 @@ public class Constants {
     public final void shutdown() {
         executor.shutdown();
     }
-
 
 }

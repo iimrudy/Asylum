@@ -30,14 +30,14 @@ public class PlayerListener implements Listener {
     public void onJoin(PlayerJoinEvent event) {
         AsylumScoreBoard.createScore(event.getPlayer());
         lastMessage.put(event.getPlayer(), "");
-        AsylumCore.getInstance().sendUpdate();
+        AsylumCore.getInstance().sendUpdate(false);
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         Bukkit.getScheduler().runTaskAsynchronously(AsylumCore.getInstance(), () -> AsylumScoreBoard.removeScore(event.getPlayer()));
         lastMessage.remove(event.getPlayer());
-        AsylumCore.getInstance().sendUpdate();
+        AsylumCore.getInstance().sendUpdate(false);
     }
 
     @EventHandler

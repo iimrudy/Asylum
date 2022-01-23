@@ -8,3 +8,13 @@
 /Core/build/classes/java/main/
 /Lobby/build/
 /Lobby/build/classes/java/main/
+*.class
+*.properties
+Cloud/build/reports/tests/test/css/base-style.css
+Cloud/build/reports/tests/test/css/style.css
+Cloud/build/reports/tests/test/index.html
+Cloud/build/reports/tests/test/js/report.js
+Cloud/build/test-results/test/binary/output.bin
+Cloud/build/test-results/test/binary/output.bin.idx
+Cloud/build/test-results/test/binary/results.bin
+Cloud/build/tmp/compileTestJava/previous-compilation-data.bin

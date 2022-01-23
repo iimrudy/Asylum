@@ -14,6 +14,9 @@ import java.util.concurrent.CompletableFuture;
 
 public class IpInfo {
 
+    IpInfo() {
+    }
+
     @SneakyThrows
     public static CompletableFuture<IpInfo.GeoIpResponse> fetchIp(@NonNull InetAddress address) {
         String url = "https://freegeoip.app/json/" + address.getHostAddress();

@@ -1,15 +1,14 @@
 package eu.asylum.common.cloud.servers;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Cleanup;
+import lombok.Data;
 
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
-@Getter
-@Setter
+@Data
 public final class Pinger implements Serializable, Cloneable {
 
     private static final String COLOR_CODE = "\u00A7"; // § Symbol
@@ -33,14 +32,17 @@ public final class Pinger implements Serializable, Cloneable {
 
 
     public boolean ping() {
+        // don't know how this works - just found into the protocol wiki of minecraft
+        // just edited a bit of it to make it work
         try {
+            @Cleanup
             Socket socket = new Socket();
             socket.setSoTimeout(this.timeout);
             socket.connect(new InetSocketAddress(this.getAddress(), this.getPort()), this.getTimeout());
-            final OutputStream outputStream = socket.getOutputStream();
-            final DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
-            final InputStream inputStream = socket.getInputStream();
-            final InputStreamReader inputStreamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_16BE);
+            @Cleanup final OutputStream outputStream = socket.getOutputStream();
+            @Cleanup final DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+            @Cleanup final InputStream inputStream = socket.getInputStream();
+            @Cleanup final InputStreamReader inputStreamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_16BE);
 
             dataOutputStream.write(0xFE);
 
@@ -67,12 +69,10 @@ public final class Pinger implements Serializable, Cloneable {
                 this.setPlayersOnline(Integer.parseInt(data[1]));
                 this.setMaxPlayers(Integer.parseInt(data[2]));
             }
-            dataOutputStream.close();
-            outputStream.close();
-            inputStreamReader.close();
-            inputStream.close();
-            socket.close();
         } catch (IOException exception) {
+            this.pingVersion = -1;
+            this.protocolVersion = -1;
+            this.playersOnline = -1;
             return false;
         }
         return true;
@@ -80,22 +80,11 @@ public final class Pinger implements Serializable, Cloneable {
 
     @Override
     public String toString() {
-        String sb = "Pinger{" + "address='" + address + '\'' +
-                ", port=" + port +
-                ", timeout=" + timeout +
-                ", pingVersion=" + pingVersion +
-                ", protocolVersion=" + protocolVersion +
-                ", playersOnline=" + playersOnline +
-                ", maxPlayers=" + maxPlayers +
-                ", gameVersion='" + gameVersion + '\'' +
-                ", motd='" + motd + '\'' +
-                ", lastResponse='" + lastResponse + '\'' +
-                '}';
-        return sb;
+        return "Pinger{address='%s', port=%d, timeout=%d, pingVersion=%d, protocolVersion=%d, playersOnline=%d, maxPlayers=%d, gameVersion='%s', motd='%s', lastResponse='%s'}".formatted(address, port, timeout, pingVersion, protocolVersion, playersOnline, maxPlayers, gameVersion, motd, lastResponse);
     }
 
-    public Object clone() throws CloneNotSupportedException {
-        return super.clone();
+    public Pinger clone() {
+        return new Pinger(this.address, this.port);
     }
 
 }

@@ -1,11 +1,17 @@
 import eu.asylum.common.utils.IpInfo;
 import eu.asylum.common.utils.NekobinUploader;
+import eu.asylum.common.utils.Serialization;
 import eu.asylum.common.utils.UuidConverter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
+import java.io.Serializable;
 import java.net.InetAddress;
+import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 
 public class TestCommon {
 
@@ -80,6 +86,24 @@ public class TestCommon {
         });
     }
 
+    private static long countLines(File start, String ext) {
+        long count = 0;
+        for (File f : start.listFiles()) {
+            if (f.isDirectory()) {
+                count += countLines(f, ext); // recursive go brr
+            } else {
+                try {
+                    if (f.getName().endsWith(ext)) {
+                        count += Files.readAllLines(f.toPath()).size();
+                    }
+                } catch (Exception e) {
+                    // ignored it's fine
+                }
+            }
+        }
+        return count;
+    }
+
     @Test
     public void testIpInfo() {
         Assertions.assertDoesNotThrow(() -> {
@@ -101,8 +125,30 @@ public class TestCommon {
         });
     }
 
+    @Test
+    public void lineCounter() {
+        long len = countLines(new File("../"), ".java");
+        System.out.println("Total lines (.java): " + len);
+    }
+
+    @Test
+    public void SerializationTests() throws Exception {
+        Data d = new Data();
+        List<String> a = new ArrayList<>();
+        IntStream.range(0, 500).forEach(i -> a.add("aaa" + i));
+        d.o = a;
+        var s1 = Serialization.serialize(d);
+        var s2 = Serialization.serializeCompressed(d);
+        var d1 = (Data) Serialization.deserialize(s1);
+        var d2 = (Data) Serialization.deserializeCompressed(s2);
+    }
+
     private static class FakePlayer extends UuidConverter.MinecraftProfile {
 
+    }
+
+    private static class Data implements Serializable {
+        Object o;
     }
 
 }
