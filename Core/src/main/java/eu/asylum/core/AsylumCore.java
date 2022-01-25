@@ -146,7 +146,7 @@ public class AsylumCore extends JavaPlugin {
     public final void setupPrefix(Player player) {
         asylumProvider.getAsylumPlayerAsync(player).thenAccept(asylumPlayer -> {
             if (asylumPlayer.isPresent() && player.isOnline()) {
-                var prefix = asylumPlayer.get().getRank().getPrefix();
+                var prefix = asylumPlayer.get().getPlayerData().getRank().getPrefix();
                 if (prefix.length() > 0) {
                     prefix = prefix + " ";
                 }

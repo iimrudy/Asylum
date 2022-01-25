@@ -19,12 +19,12 @@ public class BuildCommand extends BaseCommand {
     @CommandCompletion("")
     public void toggleBuild(Player sender, @Optional OnlinePlayer target) {
         var apSender = AsylumCore.getInstance().getAsylumProvider().getAsylumPlayer(sender);
-        if (apSender.isEmpty() || !apSender.get().getRank().isOwnerOrAdmin()) return;
+        if (apSender.isEmpty() || !apSender.get().getPlayerData().getRank().isOwnerOrAdmin()) return;
 
         if (target != null && target.getPlayer() != null && target.getPlayer().isOnline()) {
             var apTarget = AsylumCore.getInstance().getAsylumProvider().getAsylumPlayer(target.getPlayer());
             if (apTarget.isEmpty()) return;
-            if (!apSender.get().getRank().isOwnerOrAdmin()) return;
+            if (!apSender.get().getPlayerData().getRank().isOwnerOrAdmin()) return;
             if (AsylumLobby.getInstance().getBuildingPlayers().contains(target.getPlayer())) {
                 AsylumLobby.getInstance().getBuildingPlayers().remove(target.getPlayer());
                 sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lSystem &8" + MessageUtils.HEAVY_VERTICAL + " &7Build-Mode &c&lDisabled&7 for &e" + target.getPlayer().getName() + "."));
@@ -39,7 +39,7 @@ public class BuildCommand extends BaseCommand {
                 target.getPlayer().getInventory().clear();
             }
         } else {
-            if (!apSender.get().getRank().isOwnerOrAdmin()) return;
+            if (!apSender.get().getPlayerData().getRank().isOwnerOrAdmin()) return;
             if (AsylumLobby.getInstance().getBuildingPlayers().contains(sender)) {
                 AsylumLobby.getInstance().getBuildingPlayers().remove(sender);
                 sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6&lSystem &8" + MessageUtils.HEAVY_VERTICAL + " &7Build-Mode &c&lDisabled&7."));
