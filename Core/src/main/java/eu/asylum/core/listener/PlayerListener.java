@@ -1,6 +1,6 @@
 package eu.asylum.core.listener;
 
-import eu.asylum.common.data.AsylumPlayer;
+import eu.asylum.common.data.AsylumPlayerData;
 import eu.asylum.core.AsylumCore;
 import eu.asylum.core.configuration.CoreConfiguration;
 import eu.asylum.core.helpers.AsylumScoreBoard;
@@ -54,13 +54,13 @@ public class PlayerListener implements Listener {
             return;
         }
 
-        final AsylumPlayer<Player> ap = oap.get();
+        final AsylumPlayerData apd = oap.get().getPlayerData();
 
         String msg = ((TextComponent) event.originalMessage()).content();
         String oldMsg = lastMessage.get(event.getPlayer());
 
         // Check similarity || Similarity is not checked for staff
-        if (CoreConfiguration.CHAT_FILTER_REPETITION.getBoolean() && !ap.getRank().isStaff()) {
+        if (CoreConfiguration.CHAT_FILTER_REPETITION.getBoolean() && !apd.getRank().isStaff()) {
             if (jaroWinklerDistance == null) jaroWinklerDistance = new JaroWinklerDistance(); // lazy init
 
             // check if a string is similar to another with apache common string
@@ -86,7 +86,7 @@ public class PlayerListener implements Listener {
         }
 
         // Only Staff can use the chat
-        if (CoreConfiguration.CHAT_FILTER_ONLY_STAFF.getBoolean() && !ap.getRank().isStaff()) {
+        if (CoreConfiguration.CHAT_FILTER_ONLY_STAFF.getBoolean() && !apd.getRank().isStaff()) {
             event.getPlayer().sendMessage(ChatColor.translateAlternateColorCodes('&', "&9Chat> &7At the moment, only the staff can use the chat."));
             return;
         }
@@ -94,12 +94,12 @@ public class PlayerListener implements Listener {
 
         // pretty format the chat
         this.lastMessage.replace(event.getPlayer(), msg); // update last message, leave at the end.
-        String prfx = ap.getRank().getPrefix();
-        String after = "&e" + ap.getPlayerObject().getName() + "&7 " + msg;
+        String prfx = apd.getRank().getPrefix();
+        String after = "&e" + oap.get().getUsername() + "&7 " + msg;
         if (prfx.length() > 0) {
             after = " " + after;
         }
-        Component newMessage = MiniMessage.get().parse(ap.getRank().getPrefix());
+        Component newMessage = MiniMessage.get().parse(apd.getRank().getPrefix());
         newMessage = newMessage.append(LegacyComponentSerializer.legacyAmpersand().deserialize(after));
         Bukkit.broadcast(newMessage);
     }

@@ -1,7 +1,6 @@
 package eu.asylum.core;
 
 import co.aikar.commands.BukkitCommandManager;
-import com.google.protobuf.Duration;
 import eu.asylum.common.AsylumProvider;
 import eu.asylum.common.cloud.enums.CloudChannels;
 import eu.asylum.common.cloud.pubsub.cloud.RedisCloudShutdown;

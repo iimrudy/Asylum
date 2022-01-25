@@ -24,6 +24,8 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.*;
 import org.bukkit.event.weather.WeatherChangeEvent;
 
+import java.util.Objects;
+
 public class PlayerListener implements Listener {
 
     @EventHandler
@@ -46,24 +48,24 @@ public class PlayerListener implements Listener {
         }
 
         switch (p.getInventory().getItemInMainHand().getType()) {
-            case COMPASS:
+            case COMPASS -> {
                 if (event.getAction().equals(Action.PHYSICAL)) return;
                 AsylumLobby.getInstance().getServerSelectorGUI().openInventory(p);
-                break;
-            case CLOCK:
+            }
+            case CLOCK -> {
                 if (event.getAction().equals(Action.PHYSICAL)) return;
                 AsylumLobby.getInstance().getLobbySelectorGUI().openInventory(p);
-                break;
-            default:
-                break;
+            }
+            default -> {
+                // do nothing
+            }
         }
     }
 
 
     @EventHandler
     public final void onInvClick(InventoryClickEvent event) {
-        if (!(event.getWhoClicked() instanceof Player)) return;
-        var player = (Player) event.getWhoClicked();
+        if (!(event.getWhoClicked() instanceof Player player)) return;
 
         if (AsylumLobby.getInstance().getGamesManager().isPlayerPlaying(player) || AsylumLobby.getInstance().getBuildingPlayers().contains(player))
             return;
@@ -91,8 +93,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public final void disablePlayerDamage(final EntityDamageByEntityEvent event) {
-        if (!(event.getDamager() instanceof Player)) return;
-        var player = (Player) event.getDamager();
+        if (!(event.getDamager() instanceof Player player)) return;
         if (!AsylumLobby.getInstance().getGamesManager().isPlayerPlaying(player)) {
             event.setCancelled(true);
             player.closeInventory(InventoryCloseEvent.Reason.CANT_USE);
@@ -122,8 +123,7 @@ public class PlayerListener implements Listener {
             return;
         }
 
-        if (!(event.getEntity() instanceof Player)) return;
-        var player = (Player) event.getEntity();
+        if (!(event.getEntity() instanceof Player player)) return;
         if (!AsylumLobby.getInstance().getGamesManager().isPlayerPlaying(player)) {
             event.setCancelled(true);
             event.setDamage(0);
@@ -135,7 +135,7 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onPlayerInteract(final PlayerInteractEvent event) {
         Action action = event.getAction();
-        if (action == Action.RIGHT_CLICK_BLOCK && (event.getClickedBlock().getType().toString().toLowerCase().contains("chest") || event.getClickedBlock().getType().toString().toLowerCase().contains("door")
+        if (action == Action.RIGHT_CLICK_BLOCK && (Objects.requireNonNull(event.getClickedBlock()).getType().toString().toLowerCase().contains("chest") || event.getClickedBlock().getType().toString().toLowerCase().contains("door")
                 || event.getClickedBlock().getType().toString().toLowerCase().contains("fence")
                 || event.getClickedBlock().getType().equals(Material.DISPENSER)
                 || event.getClickedBlock().getType().equals(Material.DROPPER)
