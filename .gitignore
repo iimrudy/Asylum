@@ -8,6 +8,8 @@
 /Core/build/classes/java/main/
 /Lobby/build/
 /Lobby/build/classes/java/main/
+/Cloud/build/
+/Cloud/build/classes/java/main/
 *.class
 *.properties
 Cloud/build/reports/tests/test/css/base-style.css
