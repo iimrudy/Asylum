@@ -7,19 +7,20 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Getter
 @Setter
-public class GuiListener extends AbstractGui {
+public class SimpleGui extends AbstractGui {
 
 
     private final List<GuiItem> guiItemList = new ArrayList<>();
 
-    public GuiListener(int size, Component title) {
-        super(size, title);
+    public SimpleGui(int size, Component title, JavaPlugin plugin) {
+        super(size, title, plugin);
     }
 
     @Override

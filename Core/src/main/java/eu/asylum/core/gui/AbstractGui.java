@@ -1,21 +1,26 @@
 package eu.asylum.core.gui;
 
+import lombok.NonNull;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public abstract class AbstractGui implements Listener {
 
     protected final int size;
     protected Component title;
 
-    public AbstractGui(int size, Component title) {
+    public AbstractGui(int size, Component title, @NonNull JavaPlugin plugin) {
         this.size = size;
         this.title = title;
+        Bukkit.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
 
@@ -44,6 +49,12 @@ public abstract class AbstractGui implements Listener {
     public abstract void openInventory(Player player);
 
     protected abstract void onItemClick(Player player, ItemStack clickedItem, org.bukkit.inventory.Inventory inventory);
+
+    public void fill(Inventory inv, ItemStack item, int start, int end) {
+        for (int i = start; i < end; i++) {
+            inv.setItem(i, item);
+        }
+    }
 
 
 }

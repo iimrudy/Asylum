@@ -23,6 +23,8 @@ import net.elytrium.limboapi.api.Limbo;
 import net.elytrium.limboapi.api.LimboFactory;
 import net.elytrium.limboapi.api.chunk.Dimension;
 import net.elytrium.limboapi.api.chunk.VirtualWorld;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -30,6 +32,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 @Plugin(id = "proxy", name = "Proxy", version = "1.0-SNAPSHOT", description = "I did it!", authors = {"iim_rudy"})
 @Getter
@@ -47,10 +50,11 @@ public class Proxy {
     private ServerRepository serverRepostiory;
     private QueueRepository queueRepository;
     private Limbo queueServer;
+    public static final Function<String, Component> serialize = message -> LegacyComponentSerializer.legacyAmpersand().deserialize(message);
 
     @Inject
     public Proxy(ProxyServer server, Logger logger, @DataDirectory final Path folder) {
-        instance = this;
+        Proxy.instance = this;
         this.server = server;
         this.logger = logger;
         this.dataDirectory = folder;

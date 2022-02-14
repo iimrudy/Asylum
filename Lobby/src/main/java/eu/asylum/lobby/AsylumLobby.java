@@ -40,7 +40,7 @@ public class AsylumLobby extends JavaPlugin {
     private static AsylumLobby instance;
     @Getter
     private final List<Player> buildingPlayers = new ArrayList<>();
-    private final ServerSelectorGUI serverSelectorGUI = new ServerSelectorGUI();
+    private ServerSelectorGUI serverSelectorGUI;
     private ServerGui lobbySelectorGUI;
     @Getter
     private Location lobbyLocation;
@@ -76,7 +76,7 @@ public class AsylumLobby extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        instance = this;
+        AsylumLobby.instance = this;
         this.getServer().getScheduler().runTaskTimerAsynchronously(this, scoreboardTask, 10L, 60L);
         this.commandManager = new BukkitCommandManager(this);
         this.commandManager.registerCommand(new LobbyManagerCommand());
@@ -97,11 +97,10 @@ public class AsylumLobby extends JavaPlugin {
 
         this.loadData();
         this.getServer().getPluginManager().registerEvents(new PlayerListener(), this);
-        this.getServer().getPluginManager().registerEvents(this.serverSelectorGUI, this);
-        this.lobbySelectorGUI = new ServerGui(ServerType.LOBBY, LegacyComponentSerializer.legacyAmpersand().deserialize("&e&lLOBBY SELECTOR"));
-        this.getServer().getPluginManager().registerEvents(this.lobbySelectorGUI, this);
+        this.lobbySelectorGUI = new ServerGui(ServerType.LOBBY, LegacyComponentSerializer.legacyAmpersand().deserialize("&e&lLOBBY SELECTOR"), this);
         this.gamesManager = new GamesManager();
         this.getServer().getOnlinePlayers().forEach(Items::formatInventory);
+        this.serverSelectorGUI = new ServerSelectorGUI(this);
     }
 
     public void reload() throws Exception {

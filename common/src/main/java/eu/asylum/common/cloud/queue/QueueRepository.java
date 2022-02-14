@@ -36,9 +36,11 @@ public class QueueRepository extends RedisPubSubAdapter<String, String> {
     @Synchronized
     public void message(String channel, String message) {
         if (channel.equals(QueueChannels.PLAYER_QUEUE_JOIN.getChannel())) {
-            //var queueJoin = Constants.get().getGson().fromJson(message, RedisQueueJoin.class);
+            var queueJoin = Constants.get().getGson().fromJson(message, RedisQueueJoin.class);
+            this.onJoinQueue(queueJoin);
         } else if (channel.equals(QueueChannels.PLAYER_QUEUE_LEAVE.getChannel())) {
-            //var queueJoin = Constants.get().getGson().fromJson(message, RedisQueueLeft.class);
+            var queueLeft = Constants.get().getGson().fromJson(message, RedisQueueLeft.class);
+            this.onQueueLeft(queueLeft);
         } else if (channel.equals(QueueChannels.QUEUE_CONNECT.getChannel())) {
             var queueConnect = Constants.get().getGson().fromJson(message, RedisQueueConnect.class);
             this.onConnect(queueConnect);
@@ -48,14 +50,23 @@ public class QueueRepository extends RedisPubSubAdapter<String, String> {
     public void onConnect(RedisQueueConnect queueConnect) {
         // this method can be overridden by subclasses that need to do something on queue connect
     }
+    
+    public void onJoinQueue(RedisQueueJoin queueJoin) {
+        // this method can be overridden by subclasses that need to do something on queue join
+
+    }
+    
+    public void onQueueLeft(RedisQueueLeft queueLeft) {
+        // this method can be overridden by subclasses that need to do something on queue left
+    }
 
     // method called only by redis pubsub handler
-    protected CompletableFuture<?> removePlayerFromQueues(String playerName) {
+    protected CompletableFuture<Void> removePlayerFromQueues(String playerName) {
         return CompletableFuture.supplyAsync(() -> {
             for (ServerType serverType : ServerType.values()) {
                 this.db.getRedisConnection().sync().srem(serverType.getQueueName(), playerName);
             }
-            return Void.TYPE;
+            return null;
         }, Constants.get().getExecutor());
     }
 
@@ -97,9 +108,7 @@ public class QueueRepository extends RedisPubSubAdapter<String, String> {
         HashMap<ServerType, Queue<String>> map = new HashMap<>();
         for (ServerType serverType : ServerType.values()) {
             Queue<String> queues = new LinkedList<>();
-            this.db.getRedisConnection().sync().sscan(serverType.getQueueName()).getValues().forEach(playerName -> {
-                queues.add(playerName);
-            });
+            this.db.getRedisConnection().sync().sscan(serverType.getQueueName()).getValues().forEach(queues::add);
             map.put(serverType, queues);
         }
         return map;

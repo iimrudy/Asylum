@@ -52,6 +52,7 @@ public class Cloud {
     private final List<String> occupiedNames = Collections.synchronizedList(new ArrayList<>());
     private final CommandHandler commandHandler;
     private final TaskWaiter logicWaiter = new TaskWaiter(true);
+    @Getter
     private final QueueManager queueManager;
 
     public Cloud() throws Exception {
@@ -257,6 +258,7 @@ public class Cloud {
                 }
             }
         }, 10, TimeUnit.SECONDS);
+
     }
 
     public final void forceKill(@NonNull Server server) {

@@ -14,10 +14,7 @@ import eu.asylum.common.cloud.enums.ServerType;
 import eu.asylum.proxy.Proxy;
 import eu.asylum.proxy.handler.QueueLimboHandler;
 import net.elytrium.limboapi.api.event.LoginLimboRegisterEvent;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-
-import java.util.function.Function;
+import static eu.asylum.proxy.Proxy.serialize;
 
 public class ServerListener {
 
@@ -26,7 +23,6 @@ public class ServerListener {
     private static final LegacyChannelIdentifier LEGACY_BUNGEE_CHANNEL = new LegacyChannelIdentifier("BungeeCord");
     private static final MinecraftChannelIdentifier MODERN_BUNGEE_CHANNEL = MinecraftChannelIdentifier.create("bungeecord", "main");
 
-    private static final Function<String, Component> serialize = message -> LegacyComponentSerializer.legacyAmpersand().deserialize(message);
 
     public ServerListener() {
         Proxy.get().getServer().getChannelRegistrar().register(LEGACY_BUNGEE_CHANNEL, MODERN_BUNGEE_CHANNEL);
@@ -95,13 +91,8 @@ public class ServerListener {
                 String serverName = in.readUTF();
                 String playerName = in.readUTF();
                 Proxy.get().getServer().getPlayer(playerName).ifPresent(player -> {
-                    Proxy.get().getServer().getServer(serverName).ifPresent(server -> {
-                        var o = Proxy.get().getQueueLimboHandler(player.getUsername());
-                        if (o.isPresent()) {
-                            o.get().getPlayer().disconnect(server);
-                        } else {
-                            player.createConnectionRequest(server).fireAndForget();
-                        }
+                    Proxy.get().getServer().getServer(serverName).ifPresent(server -> { // if server is present
+                        Proxy.get().getQueueLimboHandler(player.getUsername()).ifPresentOrElse( limbo -> limbo.getPlayer().disconnect(server), () -> player.createConnectionRequest(server).fireAndForget());
                     });
                 });
             }
