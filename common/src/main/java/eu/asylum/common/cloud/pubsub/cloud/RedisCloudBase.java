@@ -10,7 +10,6 @@ import lombok.ToString;
 @ToString
 public class RedisCloudBase {
 
-    @SerializedName("name")
-    protected String serverName;
-
+  @SerializedName("name")
+  protected String serverName;
 }

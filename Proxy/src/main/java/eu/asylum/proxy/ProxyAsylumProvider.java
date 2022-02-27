@@ -10,41 +10,39 @@ import eu.asylum.common.configuration.AsylumConfiguration;
 import eu.asylum.common.configuration.ConfigurationContainer;
 import eu.asylum.common.player.AbstractAsylumPlayer;
 import eu.asylum.proxy.player.ProxyAsylumPlayer;
-import lombok.NonNull;
-
 import java.util.ArrayList;
 import java.util.List;
+import lombok.NonNull;
 
 public class ProxyAsylumProvider extends AsylumProvider<Player> {
 
-    public ProxyAsylumProvider(@NonNull ConfigurationContainer<?> configurationContainer) {
-        super(configurationContainer);
-    }
+  public ProxyAsylumProvider(@NonNull ConfigurationContainer<?> configurationContainer) {
+    super(configurationContainer);
+  }
 
-    @Override
-    public List<Player> getOnlinePlayers() {
-        return new ArrayList<>(Proxy.get().getServer().getAllPlayers());
-    }
+  @Override
+  public List<Player> getOnlinePlayers() {
+    return new ArrayList<>(Proxy.get().getServer().getAllPlayers());
+  }
 
-    @Override
-    public AbstractAsylumPlayer<Player> craftAsylumPlayer(@NonNull Player playerObject) {
-        return new ProxyAsylumPlayer(playerObject);
-    }
+  @Override
+  public AbstractAsylumPlayer<Player> craftAsylumPlayer(@NonNull Player playerObject) {
+    return new ProxyAsylumPlayer(playerObject);
+  }
 
-    @Subscribe
-    public void onLoginEvent(LoginEvent event) {
-        onJoin(event.getPlayer());
-    }
+  @Subscribe
+  public void onLoginEvent(LoginEvent event) {
+    onJoin(event.getPlayer());
+  }
 
-    @Subscribe
-    public void onDisconnectEvent(DisconnectEvent event) {
-        onQuit(event.getPlayer());
-    }
+  @Subscribe
+  public void onDisconnectEvent(DisconnectEvent event) {
+    onQuit(event.getPlayer());
+  }
 
-    @Override
-    public ServerRepository serverRepositoryBuilder() {
-        return new ProxyServerRepository(AsylumConfiguration.REDIS_URI.getString(), AsylumConfiguration.MONGODB_URI.getString());
-    }
-
-
+  @Override
+  public ServerRepository serverRepositoryBuilder() {
+    return new ProxyServerRepository(
+        AsylumConfiguration.REDIS_URI.getString(), AsylumConfiguration.MONGODB_URI.getString());
+  }
 }

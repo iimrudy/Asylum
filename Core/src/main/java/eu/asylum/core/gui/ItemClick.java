@@ -7,5 +7,5 @@ import org.bukkit.inventory.ItemStack;
 @FunctionalInterface
 public interface ItemClick {
 
-    void onItemClick(Player player, ItemStack item, Inventory inventory);
+  void onItemClick(Player player, ItemStack item, Inventory inventory);
 }

@@ -7,10 +7,9 @@ import lombok.Data;
 @Data
 public class RedisQueueJoin {
 
-    @SerializedName("PlayerName")
-    private String playerName;
+  @SerializedName("PlayerName")
+  private String playerName;
 
-    @SerializedName("serverType")
-    private ServerType serverType;
-
+  @SerializedName("serverType")
+  private ServerType serverType;
 }

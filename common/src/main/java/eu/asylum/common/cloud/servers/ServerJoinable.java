@@ -4,8 +4,11 @@ import lombok.NonNull;
 
 public interface ServerJoinable {
 
-    ServerJoinable DEFAULT = server -> server.getServerStatus() != null && server.getServerStatus().getOnlinePlayers() < server.getServerType().getMaxPlayers();
+  ServerJoinable DEFAULT =
+      server ->
+          server.getServerStatus() != null
+              && server.getServerStatus().getOnlinePlayers()
+                  < server.getServerType().getMaxPlayers();
 
-    boolean isJoinable(@NonNull Server server);
-
+  boolean isJoinable(@NonNull Server server);
 }

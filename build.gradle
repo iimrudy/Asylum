@@ -50,8 +50,10 @@ subprojects {
         compileOnly 'org.mongodb:mongodb-driver-sync:4.4.0' // mongodb
         compileOnly 'io.lettuce:lettuce-core:6.1.5.RELEASE' // redis client
         compileOnly 'com.google.code.gson:gson:2.8.9' // google gson
-        compileOnly group: 'org.apache.commons', name: 'commons-lang3', version: '3.12.0' // apache common lang 3
-        compileOnly group: 'org.apache.commons', name: 'commons-text', version: '1.9' // apache common text
+        compileOnly group: 'org.apache.commons', name: 'commons-lang3', version: '3.12.0'
+        // apache common lang 3
+        compileOnly group: 'org.apache.commons', name: 'commons-text', version: '1.9'
+        // apache common text
         compileOnly group: 'org.apache.commons', name: 'commons-collections4', version: '4.4'
         // apache common collections
         compileOnly 'org.hydev:HyLogger:2.1.0.378' // logging library

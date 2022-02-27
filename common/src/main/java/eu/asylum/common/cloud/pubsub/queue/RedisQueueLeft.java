@@ -7,10 +7,9 @@ import lombok.Data;
 @Data
 public class RedisQueueLeft {
 
-    @SerializedName("PlayerName")
-    private String playerName;
+  @SerializedName("PlayerName")
+  private String playerName;
 
-    @SerializedName("reason")
-    private QueueLeftReason reason;
-
+  @SerializedName("reason")
+  private QueueLeftReason reason;
 }

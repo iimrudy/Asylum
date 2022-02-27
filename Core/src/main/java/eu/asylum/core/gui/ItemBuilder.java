@@ -6,7 +6,5 @@ import org.bukkit.inventory.ItemStack;
 @FunctionalInterface
 public interface ItemBuilder {
 
-    ItemStack build(Player player);
-
-
+  ItemStack build(Player player);
 }

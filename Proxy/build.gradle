@@ -24,7 +24,7 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
     compileOnly 'com.velocitypowered:velocity-api:3.0.1'
     annotationProcessor 'com.velocitypowered:velocity-api:3.0.1'
-    compileOnly("net.elytrium:limboapi-api:1.0.3-rc2")
+    compileOnly("net.elytrium:limboapi-api:1.0.3-rc5")
 }
 
 test {

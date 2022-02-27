@@ -7,6 +7,4 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class RedisCloudShutdown extends RedisCloudBase {
-
-}
+public class RedisCloudShutdown extends RedisCloudBase {}

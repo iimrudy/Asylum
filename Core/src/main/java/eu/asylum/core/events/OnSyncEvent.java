@@ -5,15 +5,14 @@ import org.bukkit.event.HandlerList;
 
 public class OnSyncEvent extends Event {
 
-    private static final HandlerList HANDLERS = new HandlerList();
+  private static final HandlerList HANDLERS = new HandlerList();
 
-    public static HandlerList getHandlerList() {
-        return HANDLERS;
-    }
+  public static HandlerList getHandlerList() {
+    return HANDLERS;
+  }
 
-    @Override
-    public HandlerList getHandlers() {
-        return getHandlerList();
-    }
-
+  @Override
+  public HandlerList getHandlers() {
+    return getHandlerList();
+  }
 }

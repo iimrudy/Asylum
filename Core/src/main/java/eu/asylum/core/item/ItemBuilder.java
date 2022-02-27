@@ -1,86 +1,84 @@
 package eu.asylum.core.item;
 
+import java.util.List;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.List;
-
 public class ItemBuilder {
 
-    private int size;
-    private Component name;
-    private List<Component> lore;
-    private Material material;
-    private boolean unbreakable;
+  private int size;
+  private Component name;
+  private List<Component> lore;
+  private Material material;
+  private boolean unbreakable;
 
-    ItemBuilder() {
-        this.size = 1;
-        this.name = null;
-        this.lore = null;
-        this.material = Material.AIR;
-        this.unbreakable = false;
-    }
+  ItemBuilder() {
+    this.size = 1;
+    this.name = null;
+    this.lore = null;
+    this.material = Material.AIR;
+    this.unbreakable = false;
+  }
 
-    public int getSize() {
-        return size;
-    }
+  public static ItemBuilder builder() {
+    return new ItemBuilder();
+  }
 
-    public ItemBuilder setSize(int size) {
-        this.size = size;
-        return this;
-    }
+  public int getSize() {
+    return size;
+  }
 
-    public Component getName() {
-        return name;
-    }
+  public ItemBuilder setSize(int size) {
+    this.size = size;
+    return this;
+  }
 
-    public ItemBuilder setName(Component name) {
-        this.name = name;
-        return this;
-    }
+  public Component getName() {
+    return name;
+  }
 
-    public List<Component> getLore() {
-        return lore;
-    }
+  public ItemBuilder setName(Component name) {
+    this.name = name;
+    return this;
+  }
 
-    public ItemBuilder setLore(List<Component> lore) {
-        this.lore = lore;
-        return this;
-    }
+  public List<Component> getLore() {
+    return lore;
+  }
 
-    public Material getMaterial() {
-        return material;
-    }
+  public ItemBuilder setLore(List<Component> lore) {
+    this.lore = lore;
+    return this;
+  }
 
-    public ItemBuilder setMaterial(Material material) {
-        this.material = material;
-        return this;
-    }
+  public Material getMaterial() {
+    return material;
+  }
 
-    public boolean isUnbreakable() {
-        return unbreakable;
-    }
+  public ItemBuilder setMaterial(Material material) {
+    this.material = material;
+    return this;
+  }
 
-    public ItemBuilder setUnbreakable(boolean unbreakable) {
-        this.unbreakable = unbreakable;
-        return this;
-    }
+  public boolean isUnbreakable() {
+    return unbreakable;
+  }
 
-    public ItemStack build() {
-        ItemStack itemStack = new ItemStack(material, size);
-        var meta = itemStack.getItemMeta();
+  public ItemBuilder setUnbreakable(boolean unbreakable) {
+    this.unbreakable = unbreakable;
+    return this;
+  }
 
-        meta.displayName(this.name);
-        meta.lore(this.lore);
-        meta.setUnbreakable(unbreakable);
+  public ItemStack build() {
+    ItemStack itemStack = new ItemStack(material, size);
+    var meta = itemStack.getItemMeta();
 
-        itemStack.setItemMeta(meta);
-        return itemStack;
-    }
+    meta.displayName(this.name);
+    meta.lore(this.lore);
+    meta.setUnbreakable(unbreakable);
 
-    public static ItemBuilder builder() {
-        return new ItemBuilder();
-    }
-
+    itemStack.setItemMeta(meta);
+    return itemStack;
+  }
 }

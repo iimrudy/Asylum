@@ -9,6 +9,5 @@ import java.lang.annotation.Target;
 @Target({ElementType.FIELD})
 public @interface MongoSerialized {
 
-    String value() default "";
-
+  String value() default "";
 }

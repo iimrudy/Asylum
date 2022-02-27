@@ -2,6 +2,7 @@ package eu.asylum.lobby.listener;
 
 import eu.asylum.lobby.AsylumLobby;
 import eu.asylum.lobby.Items;
+import java.util.Objects;
 import org.bukkit.Material;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.ItemFrame;
@@ -21,10 +22,13 @@ import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryType;
-import org.bukkit.event.player.*;
+import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.event.weather.WeatherChangeEvent;
-
-import java.util.Objects;
 
 public class PlayerListener implements Listener {
 
