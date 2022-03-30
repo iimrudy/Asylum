@@ -20,3 +20,4 @@ Cloud/build/test-results/test/binary/output.bin
 Cloud/build/test-results/test/binary/output.bin.idx
 Cloud/build/test-results/test/binary/results.bin
 Cloud/build/tmp/compileTestJava/previous-compilation-data.bin
+.idea/sonarlint/*
