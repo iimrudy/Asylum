@@ -1,4 +1,6 @@
+import eu.asylum.common.cloud.enums.ServerType;
 import eu.asylum.common.utils.IpInfo;
+import eu.asylum.common.utils.LangUtils;
 import eu.asylum.common.utils.NekobinUploader;
 import eu.asylum.common.utils.Serialization;
 import eu.asylum.common.utils.UuidConverter;
@@ -143,6 +145,13 @@ public class TestCommon {
     var s2 = Serialization.serializeCompressed(d);
     var d1 = (Data) Serialization.deserialize(s1);
     var d2 = (Data) Serialization.deserializeCompressed(s2);
+  }
+
+  @Test
+  public void testLangUtils() {
+    for (var x : LangUtils.mapOfEnum(ServerType.class, 1).entrySet()) {
+      System.out.println(x.getKey() + " " + x.getValue());
+    }
   }
 
   private static class FakePlayer extends UuidConverter.MinecraftProfile {}

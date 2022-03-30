@@ -74,26 +74,29 @@ public class QueueRepository extends RedisPubSubAdapter<String, String> {
         Constants.get().getExecutor());
   }
 
-  public void joinQueue(String playerName, ServerType serverType) {
-    removePlayerFromQueues(playerName)
-        .thenAccept(
-            none -> {
-              this.db.getRedisConnection().sync().sadd(serverType.getQueueName(), playerName);
+  public CompletableFuture<Void> joinQueue(String username, ServerType serverType) {
+    var finalUsername = username.toLowerCase();
+    return removePlayerFromQueues(username)
+        .thenApply(
+            __ -> {
+              this.db.getRedisConnection().sync().sadd(serverType.getQueueName(), finalUsername);
               var x = new RedisQueueJoin();
-              x.setPlayerName(playerName);
+              x.setPlayerName(finalUsername);
               x.setServerType(serverType);
               this.db.publishJson(QueueChannels.PLAYER_QUEUE_JOIN.getChannel(), x);
+              return null;
             });
   }
 
-  public void leaveQueue(String playerName, QueueLeftReason reason) {
-    removePlayerFromQueues(playerName)
-        .thenAccept(
-            N -> {
+  public CompletableFuture<Void> leaveQueue(String playerName, QueueLeftReason reason) {
+    return removePlayerFromQueues(playerName)
+        .thenApply(
+            __ -> {
               var queueLeft = new RedisQueueLeft();
               queueLeft.setPlayerName(playerName);
               queueLeft.setReason(reason);
               this.db.publishJson(QueueChannels.PLAYER_QUEUE_LEAVE.getChannel(), queueLeft);
+              return null;
             });
   }
 
@@ -102,13 +105,14 @@ public class QueueRepository extends RedisPubSubAdapter<String, String> {
   }
 
   public CompletableFuture<Optional<ServerType>> getPlayerQueue(String username) {
+    var finalUsername = username.toLowerCase();
     return CompletableFuture.supplyAsync(
         () -> {
           for (ServerType serverType : ServerType.values()) {
             if (this.db
                 .getRedisConnection()
                 .sync()
-                .sismember(serverType.getQueueName(), username)) {
+                .sismember(serverType.getQueueName(), finalUsername)) {
               return Optional.of(serverType);
             }
           }

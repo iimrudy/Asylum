@@ -1,6 +1,7 @@
 package eu.asylum.cloud;
 
 import static eu.asylum.common.cloud.ServerRepository.LAGGY_TPS;
+import static eu.asylum.common.utils.LangUtils.mapOfEnum;
 
 import eu.asylum.common.cloud.ServerRepository;
 import eu.asylum.common.cloud.command.CommandHandler;
@@ -24,16 +25,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.Getter;
 import lombok.NonNull;
@@ -129,11 +127,7 @@ public class Cloud {
   private void logic0() {
     logicWaiter.await();
     logicWaiter.start();
-    HashMap<ServerType, Integer> newServers =
-        Arrays.stream(ServerType.values())
-            .collect(
-                Collectors.toMap(
-                    serverType -> serverType, serverType -> 0, (a, b) -> b, HashMap::new));
+    Map<ServerType, Integer> newServers = mapOfEnum(ServerType.class, 0);
 
     // host servers if needed
     for (var type : ServerType.values()) {
@@ -159,11 +153,7 @@ public class Cloud {
     logger.log("Starting logic");
     // host servers if needed
     // stop laggy servers - (don't stop in game servers)
-    HashMap<ServerType, Integer> newServers =
-        Arrays.stream(ServerType.values())
-            .collect(
-                Collectors.toMap(
-                    serverType -> serverType, serverType -> 0, (a, b) -> b, HashMap::new));
+    Map<ServerType, Integer> newServers = mapOfEnum(ServerType.class, 0);
     var toKill = new ArrayList<Server>();
 
     this.repository

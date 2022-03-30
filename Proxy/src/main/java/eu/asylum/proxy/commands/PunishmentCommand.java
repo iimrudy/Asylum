@@ -78,16 +78,40 @@ public class PunishmentCommand implements SimpleCommand {
               reasonBuilder.append(args[i]).append(" ");
             }
             reason =
-                reasonBuilder.substring(0, reasonBuilder.length() - 1); // get string without last space
+                reasonBuilder.substring(
+                    0, reasonBuilder.length() - 1); // get string without last space
           }
           Proxy.get()
               .getAsylumProvider()
               .getPunishmentManager()
               .createPunishment(punishmentType, player, issuer, reason, -1);
           if (issuer == null) {
-            Proxy.get().getServer().getConsoleCommandSource().sendMessage(serialize.apply("&a" + punishmentType.name() + " created for &b" + player.getUsername()+ "&a." + "&7Reason: &b" + reason + "&7." + "&7Duration: &bPermanent&7." ));
+            Proxy.get()
+                .getServer()
+                .getConsoleCommandSource()
+                .sendMessage(
+                    serialize.apply(
+                        "&a"
+                            + punishmentType.name()
+                            + " created for &b"
+                            + player.getUsername()
+                            + "&a."
+                            + "&7Reason: &b"
+                            + reason
+                            + "&7."
+                            + "&7Duration: &bPermanent&7."));
           } else {
-            issuer.sendMessage(serialize.apply("&a" + punishmentType.name() + " created for &b" + player.getUsername()+ "&a." + "&7Reason: &b" + reason + "&7." + "&7Duration: &bPermanent&7." ));
+            issuer.sendMessage(
+                serialize.apply(
+                    "&a"
+                        + punishmentType.name()
+                        + " created for &b"
+                        + player.getUsername()
+                        + "&a."
+                        + "&7Reason: &b"
+                        + reason
+                        + "&7."
+                        + "&7Duration: &bPermanent&7."));
           }
 
           if (punishmentType == PunishmentType.BAN || punishmentType == PunishmentType.KICK) {

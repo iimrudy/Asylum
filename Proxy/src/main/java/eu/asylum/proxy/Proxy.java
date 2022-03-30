@@ -2,7 +2,6 @@ package eu.asylum.proxy;
 
 import com.google.inject.Inject;
 import com.moandjiezana.toml.Toml;
-import com.velocitypowered.api.command.CommandMeta;
 import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
@@ -17,9 +16,16 @@ import eu.asylum.common.cloud.ServerRepository;
 import eu.asylum.common.cloud.queue.QueueRepository;
 import eu.asylum.common.configuration.AsylumConfiguration;
 import eu.asylum.proxy.commands.PunishmentCommand;
+import eu.asylum.proxy.commands.QueueCommand;
 import eu.asylum.proxy.configuration.TomlConfigurationContainer;
 import eu.asylum.proxy.handler.QueueLimboHandler;
 import eu.asylum.proxy.listener.ServerListener;
+import java.io.File;
+import java.nio.file.Path;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import net.elytrium.limboapi.api.Limbo;
@@ -30,13 +36,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.slf4j.Logger;
 
-import java.io.File;
-import java.nio.file.Path;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-
 @Plugin(
     id = "proxy",
     name = "Proxy",
@@ -45,6 +44,8 @@ import java.util.function.Function;
     authors = {"iim_rudy"})
 @Getter
 public class Proxy {
+
+  public static final char HEAVY_VERTICAL = '\u2503';
 
   public static final Function<String, Component> serialize =
       message -> LegacyComponentSerializer.legacyAmpersand().deserialize(message);
@@ -56,7 +57,7 @@ public class Proxy {
   private final Map<String, QueueLimboHandler> limboPlayers = new ConcurrentHashMap<>();
   @Getter private final Map<String, RegisteredServer> queuedJoin = new ConcurrentHashMap<>();
   private AsylumProvider<Player> asylumProvider;
-  private ServerRepository serverRepostiory;
+  private ServerRepository serverRepository;
   private QueueRepository queueRepository;
   private Limbo queueServer;
 
@@ -74,15 +75,22 @@ public class Proxy {
                 .getPlugin("limboapi")
                 .flatMap(PluginContainer::getInstance)
                 .orElseThrow();
-    registerCommand(new PunishmentCommand(), "ban", "mute", "tempban", "tempmute", "kick");
-  }
-
-  private void registerCommand(SimpleCommand command, String name, String ...aliases) {
-    this.getServer().getCommandManager().register(name, command, aliases);
   }
 
   public static Proxy get() {
     return instance;
+  }
+
+  public static AsylumProvider<Player> getAsylumProvider() {
+    return instance.asylumProvider;
+  }
+
+  public static QueueRepository getQueueRepository() {
+    return instance.queueRepository;
+  }
+
+  private void registerCommand(SimpleCommand command, String name, String... aliases) {
+    this.getServer().getCommandManager().register(name, command, aliases);
   }
 
   @SneakyThrows
@@ -103,14 +111,16 @@ public class Proxy {
                 loadConfig(new File(dataDirectory.toFile(), "AsylumCommon.toml"))));
     server.getEventManager().register(this, this.asylumProvider);
     server.getEventManager().register(this, new ServerListener());
-    this.serverRepostiory =
+    this.serverRepository =
         new ProxyServerRepository(
             AsylumConfiguration.REDIS_URI.getString(), AsylumConfiguration.MONGODB_URI.getString());
-    this.queueRepository = new ProxyQueueRepository(this.serverRepostiory);
+    this.queueRepository = new ProxyQueueRepository(this.serverRepository);
 
     VirtualWorld queueWorld =
         this.limboFactory.createVirtualWorld(Dimension.THE_END, 0, 0, 0, 90f, 90f);
     this.queueServer = this.limboFactory.createLimbo(queueWorld);
+    registerCommand(new PunishmentCommand(), "ban", "mute", "tempban", "tempmute", "kick");
+    registerCommand(new QueueCommand(), "queue", "join");
   }
 
   public void registerQueueLimbo(String username, QueueLimboHandler queueLimboHandler) {

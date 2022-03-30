@@ -40,15 +40,7 @@ public class AsylumCore extends JavaPlugin {
   public void onEnable() {
     AsylumCore.instance = this;
     Bukkit.getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
-    try {
-      Properties properties = new Properties();
-      @Cleanup var fr = new FileReader("asylumserver.properties");
-      properties.load(fr);
-      serverName = properties.getProperty("serverName", "UNKNOWN-1");
-    } catch (Exception e) {
-      e.printStackTrace();
-      Bukkit.shutdown();
-    }
+    initServerName();
 
     File path = new File(getDataFolder(), "AsylumCommon.yml");
     try {
@@ -125,6 +117,26 @@ public class AsylumCore extends JavaPlugin {
                         });
               }
             });
+  }
+
+  private void initServerName() {
+    var name = System.getProperty("server_name");
+    if (name == null) {
+      getLogger()
+          .severe(
+              "SERVER_NAME environment variable not set! Getting it through config (this is not recommended)");
+      try {
+        Properties properties = new Properties();
+        @Cleanup var fr = new FileReader("asylumserver.properties");
+        properties.load(fr);
+        serverName = properties.getProperty("serverName", "UNKNOWN-1");
+      } catch (Exception e) {
+        e.printStackTrace();
+        Bukkit.shutdown();
+      }
+    } else {
+      this.serverName = name;
+    }
   }
 
   @Override

@@ -1,5 +1,6 @@
 package eu.asylum.core.gui;
 
+import static eu.asylum.common.utils.LangUtils.listOf;
 import static net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacyAmpersand;
 
 import eu.asylum.common.cloud.enums.ServerType;
@@ -12,7 +13,6 @@ import eu.asylum.core.events.OnServerUpdateEvent;
 import eu.asylum.core.events.OnSyncEvent;
 import eu.asylum.core.item.ItemBuilder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Locale;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -90,7 +90,7 @@ public class ServerGui extends AbstractGui {
         .setSize(1)
         .setName(dn)
         .setLore(
-            Arrays.asList(
+            listOf(
                 empty,
                 legacyAmpersand()
                     .deserialize(

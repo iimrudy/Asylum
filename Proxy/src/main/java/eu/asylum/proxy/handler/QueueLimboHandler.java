@@ -1,14 +1,8 @@
 package eu.asylum.proxy.handler;
 
-import static eu.asylum.proxy.Proxy.serialize;
-
-import com.velocitypowered.api.proxy.Player;
 import eu.asylum.common.cloud.enums.ServerType;
-import eu.asylum.common.player.AbstractAsylumPlayer;
-import eu.asylum.common.punishments.PunishmentType;
 import eu.asylum.proxy.Proxy;
 import eu.asylum.proxy.listener.ServerListener;
-import java.util.Optional;
 import lombok.Getter;
 import net.elytrium.limboapi.api.Limbo;
 import net.elytrium.limboapi.api.LimboSessionHandler;
@@ -28,18 +22,18 @@ public class QueueLimboHandler implements LimboSessionHandler {
           BossBar.Overlay.PROGRESS);
   @Getter private LimboPlayer player;
 
-
   @Override
   public void onSpawn(Limbo server, LimboPlayer player) {
     this.player = player;
     this.player.disableFalling();
 
-
     player.getProxyPlayer().showBossBar(bossBar);
 
     if (!ServerListener.checkPunishments(player.getProxyPlayer())) {
       Proxy.get().registerQueueLimbo(player.getProxyPlayer().getUsername(), this);
-      Proxy.get().getQueueRepository().joinQueue(player.getProxyPlayer().getUsername(), ServerType.LOBBY);
+      Proxy.get()
+          .getQueueRepository()
+          .joinQueue(player.getProxyPlayer().getUsername(), ServerType.LOBBY);
     }
   }
 

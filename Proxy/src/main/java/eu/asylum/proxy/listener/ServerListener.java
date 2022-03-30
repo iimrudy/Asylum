@@ -13,6 +13,7 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.messages.LegacyChannelIdentifier;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
+import eu.asylum.common.cloud.enums.QueueLeftReason;
 import eu.asylum.common.cloud.enums.ServerType;
 import eu.asylum.common.player.AbstractAsylumPlayer;
 import eu.asylum.common.punishments.PunishmentType;
@@ -37,6 +38,23 @@ public class ServerListener {
         .register(LEGACY_BUNGEE_CHANNEL, MODERN_BUNGEE_CHANNEL);
   }
 
+  public static boolean checkPunishments(Player player2) {
+    Optional<AbstractAsylumPlayer<Player>> asylumPlayer =
+        Proxy.get().getAsylumProvider().getAsylumPlayer(player2);
+    if (asylumPlayer.isPresent()) {
+      var player = asylumPlayer.get();
+      var optionalPunishment = player.getPlayerData().hasPunishmentActive(PunishmentType.BAN);
+      if (optionalPunishment.isPresent()) {
+        player2.disconnect(serialize.apply(optionalPunishment.get().getReason()));
+        return true;
+      }
+    } else {
+      player2.disconnect(serialize.apply("Cannot load player data, please try again later."));
+      return true;
+    }
+    return false;
+  }
+
   @Subscribe
   public void onJoin(LoginEvent event) {
     // todo
@@ -47,7 +65,9 @@ public class ServerListener {
   public void disconnect(DisconnectEvent event) {
     Proxy.get().unregisterQueueLimbo(event.getPlayer().getUsername());
     Proxy.get().getQueuedJoin().remove(event.getPlayer().getUsername());
-    Proxy.get().getQueueRepository().leaveQueue(event.getPlayer().getUsername());
+    Proxy.get()
+        .getQueueRepository()
+        .leaveQueue(event.getPlayer().getUsername(), QueueLeftReason.DISCONNECTED);
 
     Proxy.get().getAsylumProvider().onQuit(event.getPlayer());
   }
@@ -135,23 +155,5 @@ public class ServerListener {
             Proxy.get().getQueueServer().spawnPlayer(event.getPlayer(), new QueueLimboHandler());
           }
         });
-  }
-
-  public static boolean checkPunishments(Player player2) {
-    Optional<AbstractAsylumPlayer<Player>> asylumPlayer = Proxy.get()
-        .getAsylumProvider()
-        .getAsylumPlayer(player2);
-    if (asylumPlayer.isPresent()) {
-      var player = asylumPlayer.get();
-      var optionalPunishment = player.getPlayerData().hasPunishmentActive(PunishmentType.BAN);
-      if (optionalPunishment.isPresent()) {
-        player2.disconnect(serialize.apply(optionalPunishment.get().getReason()));
-        return true;
-      }
-    } else {
-      player2.disconnect(serialize.apply("Cannot load player data, please try again later."));
-      return true;
-    }
-    return false;
   }
 }

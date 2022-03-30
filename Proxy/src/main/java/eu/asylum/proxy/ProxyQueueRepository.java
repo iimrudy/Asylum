@@ -66,7 +66,7 @@ public class ProxyQueueRepository extends QueueRepository {
                 queueConnect.getPlayerName(),
                 optionalServer.get()); // limbo players are connected in a different way
 
-          optionalQueue.get().getPlayer().disconnect();
+        optionalQueue.get().getPlayer().disconnect();
       } else if (optionalPlayer.isPresent()) { // else just send the player
         Proxy.get()
             .getServer()

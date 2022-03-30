@@ -1,5 +1,7 @@
 package eu.asylum.common.cloud;
 
+import static eu.asylum.common.utils.LangUtils.syncListOf;
+
 import eu.asylum.common.cloud.enums.CloudChannels;
 import eu.asylum.common.cloud.enums.ServerType;
 import eu.asylum.common.cloud.pubsub.cloud.RedisCloudAdd;
@@ -47,7 +49,7 @@ public class ServerRepository extends RedisPubSubAdapter<String, String> {
     this.servers.clear();
 
     for (var st : ServerType.values()) {
-      servers.put(st, Collections.synchronizedList(new ArrayList<>()));
+      servers.put(st, syncListOf());
     }
     // fetch servers from db
     var collection = asylumDB.getMongoCollection("asylum", "cloud");

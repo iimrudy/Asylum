@@ -50,7 +50,8 @@ public class AsylumPlayerData {
     if (this.punishmentList == null) {
       this.punishmentList = new ArrayList<>();
     }
-    if (!(this.punishmentList instanceof ArrayList)) { // make sure it's an arraylist, so we can edit the list
+    if (!(this.punishmentList
+        instanceof ArrayList)) { // make sure it's an arraylist, so we can edit the list
       this.punishmentList = new ArrayList<>(this.punishmentList);
     }
     return punishmentList;
